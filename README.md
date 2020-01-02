@@ -1,7 +1,7 @@
 # ambigous-alpaca
 
 This repository works on building classifier for different aspects of lexical semantics of words and short phrases, for example:
-- semantic selection (attributes) or relations (compound relations, adjective noun relations)
+- semantic selection (attributes) or relations (compound relations)
 - conceptual relations (hypernymy, meronymy)
 - word sense induction / disambiguation
 - prototypicality
