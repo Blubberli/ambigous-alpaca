@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scripts.composition_functions import tw_transform, transweigh_weight, concat
+from scripts import tw_transform, transweigh_weight, concat
 import unittest
 
 
@@ -94,3 +94,9 @@ class CompositionFunctionsTest(unittest.TestCase):
         expected_p = np.array([[1, 1, 1, 1, 0, 0]])
         p = concat(self.u, self.v, axis=1)
         np.testing.assert_allclose(p, expected_p)
+
+    def test_concat_fails(self):
+        """
+        Test whether two batches of size [1x3] and [1x3] can be concatenated to retrieve a batch of [1x6]
+        """
+        p = concat(self.u, np.array([1, 0]), axis=1)
