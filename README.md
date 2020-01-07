@@ -1,4 +1,4 @@
-# ambigous-alpaca
+# ambiguous-alpaca
 
 Building classifier for different aspects of lexical semantics (focus on words and short phrases), for example:
 - semantic selection (attributes) or relations (compound relations)
