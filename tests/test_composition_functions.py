@@ -49,8 +49,16 @@ class CompositionFunctionsTest(unittest.TestCase):
     def test_transformation(self):
         """
         Tests that the t transformations are correctly performed.
-        transformations_tensor contains t transformations matrices of size 2nxn, where
-        n (= embedding_dim) is the size of the input vectors u and v
+        If [[A B C D E F]] is the input matrix with a size 1x6 (1 is the batch size, 6 the embedding dimension) and
+        [[[g h i]   the transformation tensor with two transformation matrice (2 x 6 x 3) then an element-wise multiplication
+          [j k l]   along the second axis of each tensor will be performed followed by a sum reduction which reduces
+          [m n p]   the dimension 6 in each and results in a tensor of 1 x 3
+          [o w ö]   first transformation: [(A*g + B*j + C*m + D*o ...), (A*h + B*k + C*n...), (A*i + B*l + C*p...)]
+           ...      second transformation: [(A*q + B*t + C*x + D* ...), (A*r + B*u + C*y...), (A*s + B*v + C*z...)]
+         [[q r s]
+          [t u v]
+          [x y z]
+          ...]]
         """
 
         # the two transformation matrices are different, so the resulting transformations are also expected to be
