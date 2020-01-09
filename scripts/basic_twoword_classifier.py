@@ -19,8 +19,8 @@ class BasicTwoWordClassfier(nn.Module):
 
     def forward(self, word1, word2):
         """
-        this function takes two words, concatenates them and applies a non-linear matrix transformation. Then
-        it returns the concatenated and transformed vectors.
+        this function takes two words, concatenates them and applies a non-linear matrix transformation (hidden layer)
+        Its output is then fed to an output layer. Then it returns the concatenated and transformed vectors.
         :param word1: the first word of size batch_size x embedding size
         :param word2: the first word of size batch_size x embedding size
         :return: the transformed vectors after output layer
