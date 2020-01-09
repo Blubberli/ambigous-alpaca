@@ -28,9 +28,3 @@ class BasicTwoWordClassfier(nn.Module):
         word_composed = comp_functions.concat(word1, word2, axis=1)
         x = F.relu(self.hidden_layer(word_composed))
         return F.relu(self.output_layer(x))
-
-
-
-
-
-

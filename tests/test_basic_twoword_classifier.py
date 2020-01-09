@@ -12,8 +12,8 @@ class BasicTwoWordClassifierTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.word1 = torch.from_numpy(np.array([[1, 0, 0]], dtype= 'float32'))
-        self.word2 = torch.from_numpy(np.array([[0, 1, 0]], dtype= 'float32'))
+        self.word1 = torch.from_numpy(np.array([[1, 0, 0]], dtype='float32'))
+        self.word2 = torch.from_numpy(np.array([[0, 1, 0]], dtype='float32'))
         self.inputdim = 6
         self.hiddendim = 6
         self.labels = 2
@@ -26,4 +26,3 @@ class BasicTwoWordClassifierTest(unittest.TestCase):
         classifier = BasicTwoWordClassfier(input_dim=self.inputdim, hidden_dim=self.hiddendim, label_nr=self.labels)
         classifier.forward(self.word1, self.word2)
         print(classifier)
-
