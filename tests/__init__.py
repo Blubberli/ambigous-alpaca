@@ -1,1 +1,2 @@
 from tests.test_composition_functions import CompositionFunctionsTest
+from tests.test_basic_twoword_classifier import BasicTwoWordClassifierTest
