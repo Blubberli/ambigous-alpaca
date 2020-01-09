@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import scripts.composition_functions as comp_functions
@@ -24,10 +23,12 @@ class BasicTwoWordClassfier(nn.Module):
         it returns the concatenated and transformed vectors.
         :param word1: the first word of size batch_size x embedding size
         :param word2: the first word of size batch_size x embedding size
+        :return: the transformed vectors after output layer
         """
-        word_composed = comp_functions.concat(word1, word2)
+        word_composed = comp_functions.concat(word1, word2, axis=1)
         x = F.relu(self.hidden_layer(word_composed))
         return F.relu(self.output_layer(x))
+
 
 
 
