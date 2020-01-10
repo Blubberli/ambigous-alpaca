@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scripts import BasicTwoWordClassfier
+from scripts import BasicTwoWordClassifier
 import unittest
 
 
@@ -14,15 +14,16 @@ class BasicTwoWordClassifierTest(unittest.TestCase):
     def setUp(self):
         self.word1 = torch.from_numpy(np.array([[1, 0, 0]], dtype='float32'))
         self.word2 = torch.from_numpy(np.array([[0, 1, 0]], dtype='float32'))
-        self.inputdim = 6
-        self.hiddendim = 6
+        self.input_dim = 6
+        self.hidden_dim = 6
         self.labels = 2
 
     def test_forward(self):
         """
         tests the classifier implemented in BasicTwoWordClassifier and the overridden method "forward"
-        prints the classifier to check whether the right number of layers exist and the right dimensions are included
+        checks whether the output layer is of the right size
         """
-        classifier = BasicTwoWordClassfier(input_dim=self.inputdim, hidden_dim=self.hiddendim, label_nr=self.labels)
-        classifier.forward(self.word1, self.word2)
-        print(classifier)
+        self.expected_size = torch.tensor(np.array([[0,1]])).shape
+        classifier = BasicTwoWordClassifier(input_dim=self.input_dim, hidden_dim=self.hidden_dim, label_nr=self.labels)
+        res = classifier.forward(self.word1, self.word2)
+        np.testing.assert_allclose(res.shape, self.expected_size)

@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import scripts.composition_functions as comp_functions
 
 
-class BasicTwoWordClassfier(nn.Module):
+class BasicTwoWordClassifier(nn.Module):
     """
     this class includes a basic two-word classifier with one hidden layer and one output layer.
     :param input_dim: the dimension of the input vector where only embedding size (2 times the size of the embedding of
@@ -13,9 +13,17 @@ class BasicTwoWordClassfier(nn.Module):
     """
 
     def __init__(self, input_dim, hidden_dim, label_nr):
-        super(BasicTwoWordClassfier, self).__init__()
-        self.hidden_layer = nn.Linear(input_dim, hidden_dim)
-        self.output_layer = nn.Linear(hidden_dim, label_nr)
+        super(BasicTwoWordClassifier, self).__init__()
+        self._hidden_layer = nn.Linear(input_dim, hidden_dim)
+        self._output_layer = nn.Linear(hidden_dim, label_nr)
+
+    @property
+    def hidden_layer(self):
+        return self._hidden_layer
+
+    @property
+    def output_layer(self):
+        return self._output_layer
 
     def forward(self, word1, word2):
         """
@@ -26,5 +34,5 @@ class BasicTwoWordClassfier(nn.Module):
         :return: the transformed vectors after output layer
         """
         word_composed = comp_functions.concat(word1, word2, axis=1)
-        x = F.relu(self.hidden_layer(word_composed))
-        return F.relu(self.output_layer(x))
+
+        return self.output_layer(word_composed)
