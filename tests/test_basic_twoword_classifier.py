@@ -23,7 +23,7 @@ class BasicTwoWordClassifierTest(unittest.TestCase):
         tests the classifier implemented in BasicTwoWordClassifier and the overridden method "forward"
         checks whether the output layer is of the right size
         """
-        self.expected_size = torch.tensor(np.array([[0,1]])).shape
+        expected_size = torch.tensor(np.array([[0,1]])).shape
         classifier = BasicTwoWordClassifier(input_dim=self.input_dim, hidden_dim=self.hidden_dim, label_nr=self.labels)
         res = classifier.forward(self.word1, self.word2)
-        np.testing.assert_allclose(res.shape, self.expected_size)
+        np.testing.assert_allclose(res.shape, expected_size)

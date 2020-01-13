@@ -17,14 +17,6 @@ class BasicTwoWordClassifier(nn.Module):
         self._hidden_layer = nn.Linear(input_dim, hidden_dim)
         self._output_layer = nn.Linear(hidden_dim, label_nr)
 
-    @property
-    def hidden_layer(self):
-        return self._hidden_layer
-
-    @property
-    def output_layer(self):
-        return self._output_layer
-
     def forward(self, word1, word2):
         """
         this function takes two words, concatenates them and applies a non-linear matrix transformation (hidden layer)
@@ -34,5 +26,13 @@ class BasicTwoWordClassifier(nn.Module):
         :return: the transformed vectors after output layer
         """
         word_composed = comp_functions.concat(word1, word2, axis=1)
+        x = F.relu(self.hidden_layer(word_composed))
+        return self.output_layer(x)
 
-        return self.output_layer(word_composed)
+    @property
+    def hidden_layer(self):
+        return self._hidden_layer
+
+    @property
+    def output_layer(self):
+        return self._output_layer
