@@ -6,12 +6,12 @@ def multi_class_cross_entropy(output, target):
     """
     combines log_softmax and nll_loss in a single function, is used for multiclass classification
     :param output: the input to the loss function is the output as raw, unnormalized scores for each class,
-                    is of size (minibatch, C)
-    :param target: 1D tensor of size minibatch with range [0,C−1] for each value,
+                    is of size (minibatch, C) and of type float
+    :param target: 1D tensor of size minibatch with range [0,C−1] for each value and is of type int
     :return: loss: mean loss of all instances in batch
     """
     assert output.shape[0] == target.shape[0], "target shape is the number of batches in output"
-    assert target.dtype != 'float32', "target type has to be \"int\""  # maybe remove or use regex
+
     loss = F.cross_entropy(output, target)
     return loss
 

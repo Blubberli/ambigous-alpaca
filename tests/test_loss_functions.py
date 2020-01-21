@@ -13,10 +13,11 @@ class LossFunctionsTest(unittest.TestCase):
 
     def setUp(self):
         self.output_tensor = torch.from_numpy(
-            np.array([[5.0, 5.0, 1.0], [0.0, 1.0, 2.0], [1.0, 2.0, 3.0]], dtype='float32'))
-        self.target_labels = torch.from_numpy(np.array([0, 1, 2], dtype='long'))
+            np.array([[5.0, 5.0, 1.0], [0.0, 1.0, 2.0], [1.0, 2.0, 3.0]]))
+        self.target_labels = torch.from_numpy(np.array([0, 1, 2]))
         self.output_tensor_binary = torch.from_numpy(np.array([0.0, -1.4, -.8, .2, .4, .8, 1.2, 2.2, 2.9, 4.6]))
         self.target_labels_binary = torch.from_numpy(np.array([1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
 
     @staticmethod
     def calculate_manually(logits, target):
@@ -30,6 +31,7 @@ class LossFunctionsTest(unittest.TestCase):
 
         exps = [np.exp(i) for i in logits]
         probs = np.array(exps / np.sum(exps, axis=1, keepdims=True))  # softmax
+
 
         correct_logprobs = - np.log(probs[range(num_examples), target])  # negative log likelihood
 
@@ -68,8 +70,10 @@ class LossFunctionsTest(unittest.TestCase):
 
         loss_calc = []
         for x, y in zip(self.output_tensor_binary, self.target_labels_binary): # apply cross entropy and sigmoid to each element in vector
-            loss_calc.append(self.__cross_entropy(self.__sigmoid(x), y).numpy())
+            loss_calc.append(self.cross_entropy(self.sigmoid(x), y).numpy())
 
         expected_loss = np.mean(loss_calc)
 
         np.testing.assert_allclose(loss, expected_loss)
+
+
