@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-from scripts.feature_extractor_contextualized import BertExtractor
+from scripts import BertExtractor
 
 
 class BertTest(unittest.TestCase):

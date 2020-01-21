@@ -21,7 +21,6 @@ class BertExtractor:
         """
 
         :param sentence: A String representing a sentence, without special tokens
-        :param max_len: an int : the length to which the sentence will be padded
         :return: A dictionary containing the following:
             input ids: list[int] (the word piece ids of the given sentence)
             token_type_ids: list[int] (the token type ids, in this case a list of 0, because we do not consider a
@@ -120,7 +119,8 @@ class BertExtractor:
         all word pieces are then averaged.
         :param sentences: A list of Strings (context sentences)
         :param target_words: a list of Strings (target words)
-        :return:
+        :return: a torch tensor containing the vector representations for each target word, based on the top layer of
+        bert
         """
         assert len(sentences) == len(target_words), "for every sentence exactly one target word needs to be given."
         batch_input_ids, batch_token_type_ids, batch_attention_mask = self.convert_sentence_batch_to_indices(sentences)
