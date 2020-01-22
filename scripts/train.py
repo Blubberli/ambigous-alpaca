@@ -15,7 +15,7 @@ def main():
             np.array([0,1,2],dtype="int64"))
 
     for epoch in range(10):
-        classifier = BasicTwoWordClassifier(input_dim=6, hidden_dim=3, label_nr=3)
+        classifier = BasicTwoWordClassifier(input_dim=batch_wordtwo.shape[1]*2, hidden_dim=batch_wordone.shape[0], label_nr=len(target))
         out = classifier(batch_wordone, batch_wordtwo)
         loss = multi_class_cross_entropy(out, target)
         loss.backward()
