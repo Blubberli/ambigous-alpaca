@@ -3,7 +3,12 @@ import unittest
 from scripts import BertExtractor
 
 
-class BertTest(unittest.TestCase):
+class BertExtractorTest(unittest.TestCase):
+    """
+    this class tests the BertExtractor
+    This test suite can be ran with:
+        python -m unittest -q tests.BertExtractorTest
+    """
 
     def setUp(self):
         self.extractor = BertExtractor('bert-base-german-cased', 20, False)

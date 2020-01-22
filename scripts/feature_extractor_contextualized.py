@@ -83,9 +83,9 @@ class BertExtractor:
         """
         For a batch of input_ids, attention_masks, type_token_ids, Bert computes the corresponding layers for each token
         for each sentence in the batch.
-        :param batch_input_ids:
-        :param batch_attention_mask:
-        :param batch_token_type_ids:
+        :param batch_input_ids: batch of the word piece ids
+        :param batch_attention_mask: batch of attention masks  (what word pieces are real and what are padded)
+        :param batch_token_type_ids: batch of token_type_ids
         :return: last_hidden_states: the top layer for each token within each sentence.
                  all_layers: all 12 layers for each token within each sentence.
         """
@@ -125,8 +125,9 @@ class BertExtractor:
         assert len(sentences) == len(target_words), "for every sentence exactly one target word needs to be given."
         batch_input_ids, batch_token_type_ids, batch_attention_mask = self.convert_sentence_batch_to_indices(sentences)
         # shape last_hidden_states : batch_size x max_len x embedding_dim
-        last_hidden_states, all_layers = self.get_bert_vectors(batch_input_ids, batch_token_type_ids,
-                                                               batch_attention_mask)
+        last_hidden_states, all_layers = self.get_bert_vectors(batch_input_ids=batch_input_ids,
+                                                               batch_attention_mask=batch_attention_mask,
+                                                               batch_token_type_ids=batch_token_type_ids)
         contextualized_embeddings = []
         for i in range(len(sentences)):
             target_word_indices = self.word_indices_in_sentence(sentences[i], target_words[i])
