@@ -19,16 +19,18 @@ class TransweighTwoWordClassifier(nn.Module):
         # the transformation tensor for transforming the input vectors
         self._transformation_tensor = nn.Parameter(
             torch.empty(transformations, 2 * input_dim, input_dim), requires_grad=True)
+        nn.init.xavier_normal_(self.transformation_tensor)
         self._transformation_bias = nn.Parameter(torch.empty(transformations, input_dim), requires_grad=True)
+        nn.init.uniform_(self.transformation_bias)
         # - the combining tensor combines the transformed phrase representation into a final, flat vector
         self._combining_tensor = nn.Parameter(data=torch.empty(transformations, input_dim, input_dim),
                                               requires_grad=True)
+        nn.init.xavier_normal_(self.combining_tensor)
         self._combining_bias = nn.Parameter(torch.empty(input_dim), requires_grad=True)
+        nn.init.uniform_(self.combining_bias)
         # - these variables are needed for the classifier (one transformation, one output layer)s
         self._hidden = nn.Linear(input_dim, hidden_dim)
-        print(self.hidden.out_features)
         self._output = nn.Linear(self.hidden.out_features, label_nr)
-        print(self.output.out_features)
         self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
 
@@ -41,8 +43,8 @@ class TransweighTwoWordClassifier(nn.Module):
         :param training: training: True if the model should be trained, False if the model is in inference
         :return: the raw weights for each class
         """
-        composed_phrase = self.compose(word1, word2, training)
-        hidden = F.relu(self.hidden(composed_phrase))
+        self._composed_phrase = self.compose(word1, word2, training)
+        hidden = F.relu(self.hidden(self.composed_phrase))
         hidden = F.dropout(hidden, training=training, p=self.dropout_rate)
         class_weights = self.output(hidden)
         return class_weights
@@ -95,3 +97,7 @@ class TransweighTwoWordClassifier(nn.Module):
     @property
     def output(self):
         return self._output
+
+    @property
+    def composed_phrase(self):
+        return self._composed_phrase
