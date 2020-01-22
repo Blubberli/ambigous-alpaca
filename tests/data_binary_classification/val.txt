@@ -1,0 +1,10 @@
+Es gibt dort eine eckige Bank .	eckige Bank	Form
+Ich habe einen dreieckigen Tisch .	dreieckigen Tisch	Form
+Oma schaut eine dunkelgrüne Blume an .	dunkelgrüne Blume	Farbe
+Lena kauft ein grünes Kleid .	grünes Kleid	Farbe
+Der viereckige Kalender steht auf dem Tisch .	viereckige Kalender	Form
+Wir laufen auf einer ovalen Bahn .	ovalen Bahn	Form
+Ihr kantiges Gesicht ist schön .	kantiges Gesicht	Form
+Ich habe einen dreieckigen Schlips .	dreieckigen Schlips	Form
+Lena kauft ein braunes Kleid .	braunes Kleid	Farbe
+Lena kauft ein graues Kleid .	graues Kleid	Farbe
