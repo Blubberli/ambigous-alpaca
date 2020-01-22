@@ -8,13 +8,18 @@ import numpy as np
 
 def main():
     batch_wordone = torch.from_numpy(
-            np.array([[5.0, 5.0, 1.0], [0.0, 1.0, 2.0], [1.0, 2.0, 3.0]]))
+            np.array([[5.0, 2.0, 3.0], [0.0, 3.0, 1.0], [1.0, 0.0, 6.0]], dtype="float32"))
     batch_wordtwo = torch.from_numpy(
-            np.array([[3.0, 4.0, 2.0], [1.0, 5.0, 2.0], [3.0, 3.0, 3.0]]))
+            np.array([[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [2.0, 2.0, 2.0]],dtype="float32"))
+    target = torch.from_numpy(
+            np.array([0,1,2],dtype="int64"))
 
-    classifier = BasicTwoWordClassifier(input_dim=3, hidden_dim=3, label_nr=3)
-    loss = classifier(batch_wordone, batch_wordtwo)
-    loss = loss.backward()
-    print(loss)
-if __name__ == "__train__":
+    for epoch in range(10):
+        classifier = BasicTwoWordClassifier(input_dim=6, hidden_dim=3, label_nr=3)
+        out = classifier(batch_wordone, batch_wordtwo)
+        loss = multi_class_cross_entropy(out, target)
+        loss.backward()
+        print(loss)
+
+if __name__ == "__main__":
     main()
