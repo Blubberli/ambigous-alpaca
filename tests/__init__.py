@@ -1,2 +1,3 @@
 from tests.test_composition_functions import CompositionFunctionsTest
 from tests.test_basic_twoword_classifier import BasicTwoWordClassifierTest
+from tests.test_loss_functions import LossFunctionsTest
