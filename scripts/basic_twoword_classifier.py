@@ -12,12 +12,12 @@ class BasicTwoWordClassifier(nn.Module):
     :param label_nr : the dimension of the output layer, i.e. the number of labels
     """
 
-    def __init__(self, input_dim, hidden_dim, label_nr):
+    def __init__(self, input_dim, hidden_dim, label_nr, dropout_rate):
         super(BasicTwoWordClassifier, self).__init__()
         self._hidden_layer = nn.Linear(input_dim, hidden_dim)
         self._output_layer = nn.Linear(hidden_dim, label_nr)
-
-    def forward(self, word1, word2):
+        self._dropout_rate = dropout_rate
+    def forward(self, word1, word2, training=True):
         """
         this function takes two words, concatenates them and applies a non-linear matrix transformation (hidden layer)
         Its output is then fed to an output layer. Then it returns the concatenated and transformed vectors.
@@ -27,6 +27,7 @@ class BasicTwoWordClassifier(nn.Module):
         """
         word_composed = comp_functions.concat(word1, word2, axis=1)
         x = F.relu(self.hidden_layer(word_composed))
+        x = F.dropout(x, training=training, p=self.dropout_rate)
         return self.output_layer(x)
 
     @property
@@ -36,3 +37,7 @@ class BasicTwoWordClassifier(nn.Module):
     @property
     def output_layer(self):
         return self._output_layer
+
+    @property
+    def dropout_rate(self):
+        return self._dropout_rate

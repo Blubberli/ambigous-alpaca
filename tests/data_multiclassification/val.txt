@@ -1,0 +1,15 @@
+Der rechteckige Bildschirm ist an .	rechteckige Bildschirm	Form
+Ihr schmales Gesicht ist schön .	schmales Gesicht	Form
+Lena kauft ein weißes Kleid .	weißes Kleid	Farbe
+Wir schlafen auf einer ovalen Matratze .	ovalen Matratze	Form
+Es gibt dort eine eckige Tür .	eckige Tür	Form
+Ein rechteckiges Papier kann man immer gebrauchen .	rechteckiges Papier	Form
+Der Mann hat ein breite Stirn .	breite Stirn	Dimension
+Die Dame trägt einen kleinen Hamster .	kleinen Hamster	Dimension
+Du bist ein dickes Mädchen .	dickes Mädchen	Dimension
+Er trägt einen spitzen Bart .	spitzen Bart	Form
+Wir fahren eine eckige Kutsche .	eckige Kutsche	Form
+Du bist ein winziges Männchen .	winziges Mädchen	Dimension
+Lena kauft ein grünes Kleid .	grünes Kleid	Farbe
+Opa hat ein weißes Auto .	weißes Auto	Farbe
+Er hat eine orangene Jacke .	orangene Jacke	Farbe
