@@ -23,3 +23,9 @@ def main():
         print(loss)
 if __name__ == "__main__":
     main()
+
+    # read in arguments and save them into a configuration object
+    # classifier, hidden_layer dropout, path to dataset, hidden dimension, binary classification, no of epochs, gpu, learningrate
+    # initialize model, optimizer, create logger
+    # training loop for binary classification (+ validation)
+    # training loop for multiclass classification (+ validation)
