@@ -3,3 +3,4 @@ from tests.test_basic_twoword_classifier import BasicTwoWordClassifierTest
 from tests.test_loss_functions import LossFunctionsTest
 from tests.test_transweigh_twoword_classifier import TransweighTwoWordClassifierTest
 from tests.test_contextualized_feature_extractor import BertExtractorTest
+from tests.test_data_loader import DataLoaderTest

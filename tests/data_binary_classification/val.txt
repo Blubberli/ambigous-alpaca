@@ -1,3 +1,4 @@
+context	phrase	label
 Es gibt dort eine eckige Bank .	eckige Bank	Form
 Ich habe einen dreieckigen Tisch .	dreieckigen Tisch	Form
 Oma schaut eine dunkelgrüne Blume an .	dunkelgrüne Blume	Farbe
