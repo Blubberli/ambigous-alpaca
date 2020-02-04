@@ -5,11 +5,18 @@ class StaticEmbeddingExtractor:
     """
     this class includes methods to extract pretrained static word embeddings
     the pretrained embeddings stem from finalfusion
-    :param: path_to_fifu: the path to the pretrained embeddings stored with .fifu format
+    :param: path_to_embeddings: the path to the pretrained embeddings stored either in .fifu format or .bin (GloVe) or .w2v (word2vec)
     """
 
-    def __init__(self, path_to_fifu):
-        self._embeds = finalfusion.Embeddings(path_to_fifu, mmap=True)
+    def __init__(self, path_to_embeddings):
+        if path_to_embeddings.endswith("fifu"):
+            self._embeds = finalfusion.Embeddings(path_to_embeddings, mmap=True)
+        elif path_to_embeddings.endswith("bin"):
+            self._embeds = finalfusion.Embeddings.read_fasttext(path_to_embeddings, mmap=True)
+        elif path_to_embeddings.endswith("w2v"):
+            self._embeds = finalfusion.Embeddings.read_fasttext(path_to_embeddings, mmap=True)
+        else:
+            print("wrong path inserted")
 
     def get_embedding(self, word):
         """
