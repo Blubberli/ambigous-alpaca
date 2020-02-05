@@ -14,9 +14,9 @@ class StaticEmbeddingExtractor:
         elif path_to_embeddings.endswith("bin"):
             self._embeds = finalfusion.Embeddings.read_fasttext(path_to_embeddings, mmap=True)
         elif path_to_embeddings.endswith("w2v"):
-            self._embeds = finalfusion.Embeddings.read_fasttext(path_to_embeddings, mmap=True)
+            self._embeds = finalfusion.Embeddings.read_word2vec(path_to_embeddings, mmap=True)
         else:
-            print("wrong path inserted")
+            print("attempt to read invalid embeddings")
 
     def get_embedding(self, word):
         """
