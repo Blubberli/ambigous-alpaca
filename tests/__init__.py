@@ -6,7 +6,7 @@ from tests.test_feature_extractor_static import StaticEmbeddingExtractorTest
 from tests.test_transweigh_twoword_classifier import TransweighTwoWordClassifierTest
 from tests.test_contextualized_feature_extractor import BertExtractorTest
 
-from tests.test_data_loader import DataLoaderTest
-
 from tests.test_training_utils import TrainingUtilsTest
+
+from tests.test_data_loader import DataLoaderTest
 
