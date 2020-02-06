@@ -6,14 +6,25 @@ import numpy as np
 import logging
 import logging.config
 from scripts.logger_config import create_config
-
+import argparse
+import json
+from pathlib import Path
+import time
+from data_loader import SimplePhraseData
 #from pytorchtools import EarlyStopping
 
 
+from training_utils import init_classifier
 # add method that saves predictions to file
 
 
-def train_binary():
+def train_binary(config):
+
+    model = init_classifier(config)
+    for epoch in range(config["num_epochs"]):
+        out = model()
+    binary_class_cross_entropy()
+
     #logger.info("setting up classifier with shape %s" % batch_wordtwo.shape[1])
     #logger.info("%d training batches" % batch_wordtwo.shape[0])  # ....and so on....
 
@@ -46,15 +57,21 @@ def do_eval():
 def main():
 
     #instead read json file
-    batch_wordone = torch.from_numpy(
-            np.array([[5.0, 2.0, 3.0], [0.0, 3.0, 1.0], [1.0, 0.0, 6.0]], dtype="float32"))
-    batch_wordtwo = torch.from_numpy(
-            np.array([[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [2.0, 2.0, 2.0]],dtype="float32"))
-    target = torch.from_numpy(
-            np.array([0,1,2],dtype="int64"))
-    output_path = "/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/trylog.txt" # will be taken from json file
-
-    logging.config.dictConfig(create_config(output_path))
+    # batch_wordone = torch.from_numpy(
+    #         np.array([[5.0, 2.0, 3.0], [0.0, 3.0, 1.0], [1.0, 0.0, 6.0]], dtype="float32"))
+    # batch_wordtwo = torch.from_numpy(
+    #         np.array([[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [2.0, 2.0, 2.0]],dtype="float32"))
+    # target = torch.from_numpy(
+    #         np.array([0,1,2],dtype="int64"))
+    # output_path = "/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/trylog.txt" # will be taken from json file
+    argp = argparse.ArgumentParser()
+    argp.add_argument("path_to_config")
+    argp.parse_args()
+    argp.config = json.loads(argp.path_to_config)
+    ts = time.gmtime()
+    save_name = format("%s_%s" % (config[""], time.strftime("%Y-%m-%d-%H_%M_%S", ts)))
+    path_logfile = str(Path(config["save_path"]).joinpath(save_name + "_log.txt"))
+    logging.config.dictConfig(create_config(path_logfile))
     logger = logging.getLogger("train")
     #logging.info().. add information of that was json file
 
