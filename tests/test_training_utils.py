@@ -26,4 +26,8 @@ class TrainingUtilsTest(unittest.TestCase):
         classifier = training_utils.init_classifier(self.config)
         np.testing.assert_equal(type(classifier_basic), type(classifier))
         np.testing.assert_equal(type(classifier_tw) == type(classifier), False)
+
         np.testing.assert_equal(classifier.dropout_rate, 0.2)
+
+        np.testing.assert_equal(classifier.dropout_rate, 0.2)
+
