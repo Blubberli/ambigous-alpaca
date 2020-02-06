@@ -7,4 +7,4 @@ from scripts.logger_config import create_config
 
 from scripts.feature_extractor_static import StaticEmbeddingExtractor
 from scripts.transweigh_twoword_classifier import TransweighTwoWordClassifier
-
+from scripts.data_loader import SimplePhraseStaticDataset, SimplePhraseContextualizedDataset
