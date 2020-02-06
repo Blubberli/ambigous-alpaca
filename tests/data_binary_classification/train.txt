@@ -1,17 +1,18 @@
+context	phrase	label
 Wir laufen auf einer runden Bahn .	runden Bahn	Form
 Sie kauft einen blauen Rock .	blauen Rock	Farbe
 Opa hat ein grünes Auto .	grünes Auto	Farbe
 Er trägt einen spitzen Finger .	spitzen Finger	Form
 Ich schreibe auf dem viereckigen Blatt .	viereckigen Blatt	Form
 Sie kauft einen grauen Rock .	grauen Rock	Farbe
-Warum kann ich keine dunkelgrüne Farbe haben ?	dunkelgrüne Farbe	Farbe 
+Warum kann ich keine dunkelgrüne Farbehaben ?	dunkelgrüne Farbe	Farbe
 Wir fahren ein viereckiges Auto .	viereckiges Auto	Form
 Ich habe einen dreieckigen Käfig .	dreieckigen Käfig	Form
 Ihr kreisrundes Gesicht ist schön .	kreisrundes Gesicht	Form
 Es gibt dort eine eckige Platte .	eckige Platte	Form
 Wir rollen eine runde Kugel .	runde Kugel	Form
 Sie kauft einen weißen Rock .	weißen Rock	Farbe
-Er hat eine braune Jacke .	braune Jacke	Farbe 
+Er hat eine braune Jacke .	braune Jacke	Farbe
 Der viereckige Rahmen steht auf dem Tisch .	viereckige Rahmen	Form
 Wir fahren ein eckiges Gefährt .	eckiges Gefährt	Form
 Sie kauft einen violetten Rock .	violetten Rock	Farbe
@@ -29,7 +30,7 @@ Er trägt einen spitzen Bart .	spitzen Bart	Form
 Oma schaut eine graue Blume an .	graue Blume	Farbe
 Oma schaut eine grüne Blume an .	grüne Blume	Farbe
 Ein rechteckiges Papier kann man immer gebrauchen .	rechteckiges Papier	Form
-Er hat eine gelbe Jacke .	gelbe Jacke	Farbe 
+Er hat eine gelbe Jacke .	gelbe Jacke	Farbe
 Wir fahren ein eckiges Fahrrad .	eckiges Fahrrad	Form
 Wir rollen einen runden Freund .	runden Freund	Form
 Opa hat ein blaues Auto .	blaues Auto	Farbe
@@ -39,31 +40,31 @@ Der rechteckige Fernseher ist an .	rechteckige Fernseher	Form
 Es gibt dort eine eckige Kante .	eckige Kante	Form
 Wir fahren eine eckige Kutsche .	eckige Kutsche	Form
 Der viereckige Block ist in meiner Tasche	viereckige Block	Form
-Warum kann ich keine rote Farbe haben ?	rote Farbe	Farbe 
+Warum kann ich keine rote Farbehaben ?	rote Farbe	Farbe
 Wir rollen einen runden Fußball .	runden Fußball	Form
 Ihr schmales Gesicht ist schön .	schmales Gesicht	Form
 Sie kauft einen grünen Rock .	grünen Rock	Farbe
 Wir laufen auf einer ovalen Rutsche .	ovalen Rutsche	Form
 Wir schlafen auf einer ovalen Matratze .	ovalen Matratze	Form
-Er hat eine hellblaue Jacke .	hellblaue Jacke	Farbe 
-Er hat eine pinke Jacke .	pinke Jacke	Farbe 
-Warum kann ich keine gelbe Farbe haben ?	gelbe Farbe	Farbe 
-Er hat eine orangene Jacke .	orangene Jacke	Farbe 
+Er hat eine hellblaue Jacke .	hellblaue Jacke	Farbe
+Er hat eine pinke Jacke .	pinke Jacke	Farbe
+Warum kann ich keine gelbe Farbehaben ?	gelbe Farbe	Farbe
+Er hat eine orangene Jacke .	orangene Jacke	Farbe
 Ich habe einen dreieckigen Mülleimer .	dreieckigen Mülleimer	Form
 Es gibt dort eine eckige Zeitschrift .	eckige Zeitschrift	Form
 Es gibt dort eine eckige Tür .	eckige Tür	Form
-Er hat eine violette Jacke .	violette Jacke	Farbe 
+Er hat eine violette Jacke .	violette Jacke	Farbe
 Lena kauft ein schwarzes Kleid .	schwarzes Kleid	Farbe
 Oma schaut eine rote Blume an .	rote Blume	Farbe
-Warum kann ich keine violette Farbe haben ?	violette Farbe	Farbe 
-Warum kann ich keine rosane Farbe haben ?	rosane Farbe	Farbe
+Warum kann ich keine violette Farbehaben ?	violette Farbe	Farbe
+Warum kann ich keine rosane Farbehaben ?	rosane Farbe	Farbe
 Lena kauft ein weißes Kleid .	weißes Kleid	Farbe
 Wir rollen einen runden Kanister .	runden Kanister	Form
 Der rechteckige Bildschirm ist an .	rechteckige Bildschirm	Form
 Wir rollen einen runden Klumpen .	runden Klumpen	Form
 Wir fahren ein eckiges Bobbycar .	eckiges Bobbycar	Form
 Lena kauft ein pinkes Kleid .	pinkes Kleid	Farbe
-Er hat eine rote Jacke .	rote Jacke	Farbe 
+Er hat eine rote Jacke .	rote Jacke	Farbe
 Opa hat ein pinkes Auto .	pinkes Auto	Farbe
 Er trägt einen spitzen Mund .	spitzen Mund	Form
 Sie kauft einen schwarzen Rock .	schwarzen Rock	Farbe
