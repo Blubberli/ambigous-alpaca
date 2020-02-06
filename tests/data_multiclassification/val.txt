@@ -1,3 +1,4 @@
+context	phrase	label
 Der rechteckige Bildschirm ist an .	rechteckige Bildschirm	Form
 Ihr schmales Gesicht ist schön .	schmales Gesicht	Form
 Lena kauft ein weißes Kleid .	weißes Kleid	Farbe
