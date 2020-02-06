@@ -1,3 +1,4 @@
+context	phrase	label
 Die Dame trägt einen riesigen Klotz .	riesigen Klotz	Dimension
 Opa hat ein pinkes Auto .	pinkes Auto	Farbe
 Wir fahren ein eckiges Gefährt .	eckiges Gefährt	Form
@@ -8,21 +9,21 @@ Das ist eine riesige Schlange .	riesige Schlange	Dimension
 Er trägt einen spitzen Hut .	spitzen Hut	Form
 Der Mann hat ein schmales Kinn .	schmales Kinn	Dimension
 Ihr rundes Gesicht ist schön .	rundes Gesicht	Form
-Er hat eine pinke Jacke .	pinke Jacke	Farbe 
+Er hat eine pinke Jacke .	pinke Jacke	Farbe
 Das ist eine kurze Schlange .	kurze Schlange	Dimension
 Der Postbote bringt ein rechteckiges Paket .	rechteckiges Paket	Form
 Die Dame trägt einen kurzen Rock.	kurzen Rock	Dimension
 Die Dame trägt einen langen Rock .	langen Rock	Dimension
 Das ist ein riesiges Haus.	riesiges Haus	Dimension
 Lena kauft ein braunes Kleid .	braunes Kleid	Farbe
-Er hat eine hellblaue Jacke .	hellblaue Jacke	Farbe 
+Er hat eine hellblaue Jacke .	hellblaue Jacke	Farbe
 Lena kauf einen riesigen Bären .	riesigen Bären	Dimension
 Wir laufen auf einer runden Bahn .	runden Bahn	Form
 Lena kauft ein schwarzes Kleid .	schwarzes Kleid	Farbe
 Die Dame trägt einen langes Kleid.	langes Kleid	Dimension
 Der Mann hat ein breites Gesäß .	breites Gesäß	Dimension
-Er hat eine gelbe Jacke .	gelbe Jacke	Farbe 
-Warum kann ich keine rosane Farbe haben ?	rosane Farbe	Farbe
+Er hat eine gelbe Jacke .	gelbe Jacke	Farbe
+Warum kann ich keine rosane Farbehaben ?	rosane Farbe	Farbe
 Sie kauft einen gelben Rock .	gelben Rock	Farbe
 Du musst noch einen kleinen Augenblick warten .	kleinen Augenblick	Dimension
 Sie kauft einen grünen Rock .	grünen Rock	Farbe
