@@ -1,0 +1,45 @@
+
+{ "train_data_path": "./tests/data_multiclassification/train.txt",
+  "validation_data_path": "./tests/data_multiclassification/val.txt",
+  "test_data_path": "./tests/data_multiclassification/test.txt",
+
+  "model": {
+    "type": "basic_twoword",
+    "classifcation": "multi",
+    "dropout": 0.2,
+    "input_dim" : 300,
+    "hidden_size": 200,
+    "label_size" : 3,
+    "activation": "relu",
+    "transformations" : 100,
+    "normalize_embeddings" : false
+  },
+  "feature_extractor": {
+    "contextualized_embeddings": false,
+    "static_embeddings": true,
+    "contextualized": {
+      "bert": ["bert-base-german-cased", 200, false]
+    },
+
+    "static": {
+      "type": "structgram",
+      "pretrained_model": "./tests/embeddings/german-structgram-mincount-30-ctx-10-dims-300.fifu"
+    },
+    "context": false,
+    "sentence_pooling": "mean"
+  },
+  "iterator": {
+    "type": "basic",
+    "batch_size": 64
+  },
+  "trainer": {
+    "optimizer": {
+      "type": "adam",
+      "lr": 0.001
+    }
+  },
+  "validation_metric": "accuracy",
+  "num_serialized_models_to_keep": 3,
+  "num_epochs": 75,
+  "patience": 25,
+  "cuda_device": 0}
