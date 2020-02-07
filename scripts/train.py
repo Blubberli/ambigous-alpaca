@@ -13,11 +13,9 @@ import time
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset
 from torch.utils.data import DataLoader
 
-from pytorchtools import EarlyStopping
-
 
 from scripts.training_utils import init_classifier
-# add method that saves predictions to file
+
 
 
 def train_binary(config, data):
@@ -39,24 +37,56 @@ def train_binary(config, data):
     #     optimizer.step()
     #     print(loss)
 
-def train_multiclass(config, data):
+def train_multiclass(config, train_loader, valid_loader):
 
     model = init_classifier(config)
     optimizer = optim.Adam(model.parameters(), lr=config["trainer"]["lr"]) # or make an if statement for choosing an optimizer
+    current_patience = 0
+    tolerance = 1e-5
+    lowest_loss = float("inf")
     train_losses = []
+    valid_losses = []
+    avg_train_losses = []
+    avg_valid_losses = []
+    while current_patience < config["patience"]
+        for epoch in range(config["num_epochs"]):
+            model.train()
+            for word1,word2,labels in train_loader:
+                predictions = model(word1, word2)
+                loss = multi_class_cross_entropy(predictions, labels)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                train_losses.append(loss.item())
 
-    for epoch in range(config["num_epochs"]):
-        for word1,word2,labels in data:
-            predictions = model(word1, word2)
-            loss = multi_class_cross_entropy(predictions, labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            model.eval()
+            for word1, word2, labels in valid_loader:
+                predictions = model(word1, word2)
+                loss = multi_class_cross_entropy(predictions, labels)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                valid_losses.append(loss.item())
+
+            # calculate average loss over an epoch
+            train_loss = np.average(train_losses)
+            valid_loss = np.average(valid_losses)
+
+            if (lowest_loss - valid_loss > tolerance):
+                current_patience = 0
+                #here also model should be saved in the future
+            else:
+                current_patience +=1
+            #append average loss to list for all epochs
+            avg_train_losses.append(train_loss)
+            avg_valid_losses.append(valid_loss)
+            #set back lists for next epoch
+            train_losses = []
+            valid_losses = []
 
 
-
-
-def predict():
+def predict(): # for test set
+    #training = False
     pass
 
 
@@ -99,22 +129,27 @@ if __name__ == "__main__":
     if config["feature_extractor"]["contextualized_embeddings"] is True:
         if config["context"] is False:
             if config["feature_extractor"]["static_embeddings"] is True:
-                dataset = SimplePhraseContextualizedDataset(config["train_data_path"], config["contextualized"]["bert"])
+                dataset_train = SimplePhraseContextualizedDataset(config["train_data_path"], config["contextualized"]["bert"])
+                dataset_test = SimplePhraseContextualizedDataset(config["test_data_path"], config["contextualized"]["bert"])
     else:
-        dataset = SimplePhraseStaticDataset(config["train_data_path"], config["static"]["pretrained_model"])
+        dataset_train = SimplePhraseStaticDataset(config["train_data_path"], config["static"]["pretrained_model"])
+        dataset_test = SimplePhraseStaticDataset(config["test_data_path"], config["static"]["pretrained_model"])
 
 
     #load data with torch Data Loader
-    train_loader = DataLoader(dataset, batch_size=config["iterator"]["batch_size"], shuffle=True, num_workers=2) # maybe move to train method
+    train_loader = DataLoader(dataset_train,
+                              batch_size=config["iterator"]["batch_size"],
+                              shuffle=True,
+                              num_workers=0)
     # load validation data in batches
-    valid_loader = torch.utils.data.DataLoader(train_data,
-                                               batch_size=batch_size,
-                                               sampler=valid_sampler,
+    valid_loader = torch.utils.data.DataLoader(dataset_train,
+                                               batch_size=config["iterator"]["batch_size"],
+                                               shuffle=True,
                                                num_workers=0)
 
     # load test data in batches
-    test_loader = torch.utils.data.DataLoader(test_data,
-                                              batch_size=batch_size,
+    test_loader = torch.utils.data.DataLoader(dataset_test,
+                                              batch_size=config["iterator"]["batch_size"],
                                               num_workers=0)
 
 
