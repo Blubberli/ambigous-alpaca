@@ -24,58 +24,7 @@ def train_binary(config, train_loader, valid_loader):
     :param valid_loader: dataloader torch object with validation data
     :return: average train losses of each batch, average validation losses of each batch and trained model
     """
-    model = init_classifier(config)
-    optimizer = optim.Adam(model.parameters(),
-                           lr=config["trainer"]["lr"])  # or make an if statement for choosing an optimizer
-    current_patience = 0
-    tolerance = 1e-5
-    lowest_loss = float("inf")
-    train_losses = []
-    valid_losses = []
-    avg_train_losses = []
-    avg_valid_losses = []
-
-    for epoch in range(config["num_epochs"]):
-        model.train()
-        for word1, word2, labels in train_loader:
-            predictions = model(word1, word2)
-            loss = binary_class_cross_entropy(predictions, labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            train_losses.append(loss.item())
-
-        model.eval()
-        for word1, word2, labels in valid_loader:
-            predictions = model(word1, word2)
-            loss = binary_class_cross_entropy(predictions, labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            valid_losses.append(loss.item())
-
-        # calculate average loss over an epoch
-        train_loss = np.average(train_losses)
-        valid_loss = np.average(valid_losses)
-
-        if (lowest_loss - valid_loss > tolerance):
-            current_patience = 0
-            # here also model should be saved in the future
-        else:
-            current_patience += 1
-        if current_patience > config["patience"]:
-            break
-        # append average loss to list for all epochs
-        avg_train_losses.append(train_loss)
-        avg_valid_losses.append(valid_loss)
-        # set back lists for next epoch
-        train_losses = []
-        valid_losses = []
-        print("current patience: %d , epoch %d , train_loss: %.5f validation loss: %.5f" %
-              current_patience, epoch, train_loss, valid_loss)
-        logger.info("current patience: %d , epoch %d , train_loss: %.5f validation loss: %.5f" %
-                    current_patience, epoch, train_loss, valid_loss)
-    return (avg_train_losses, avg_valid_losses, model)
+    pass
 
 def train_multiclass(config, train_loader, lowest_loss):
     """
@@ -95,7 +44,7 @@ def train_multiclass(config, train_loader, lowest_loss):
     avg_train_losses = []
     avg_valid_losses = []
 
-    for epoch in range(config["num_epochs"]):
+    for epoch in range(1, config["num_epochs"]+1):
         model.train()
         for word1, word2, labels in train_loader:
             predictions = model(word1, word2)
@@ -109,9 +58,7 @@ def train_multiclass(config, train_loader, lowest_loss):
         for word1, word2, labels in valid_loader:
             predictions = model(word1, word2)
             loss = multi_class_cross_entropy(predictions, labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            print(loss, type(loss))
             valid_losses.append(loss.item())
 
         # calculate average loss over an epoch
@@ -119,6 +66,7 @@ def train_multiclass(config, train_loader, lowest_loss):
         valid_loss = np.average(valid_losses)
 
         if (lowest_loss - valid_loss > tolerance):
+            lowest_loss = valid_loss
             current_patience = 0
             # here also model should be saved in the future
         else:
