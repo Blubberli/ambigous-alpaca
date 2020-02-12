@@ -22,7 +22,61 @@ def train_binary(config, train_loader, valid_loader):
     :param valid_loader: dataloader torch object with validation data
     :return: average train losses of each batch, average validation losses of each batch and trained model
     """
-    pass
+    model = init_classifier(config)
+    optimizer = optim.Adam(model.parameters(), lr=config["trainer"]["optimizer"]["lr"]) # or make an if statement for choosing an optimizer
+    current_patience = 0
+    tolerance = 1e-5
+    lowest_loss = float("inf")
+    train_losses = []
+    valid_losses = []
+    avg_train_losses = []
+    avg_valid_losses = []
+    accuracies = []
+    accur = 0
+    for epoch in range(1, config["num_epochs"]+1):
+
+        model.train()
+        for word1, word2, labels in train_loader:
+            out = model(word1, word2)
+            loss = binary_class_cross_entropy(out, labels)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            train_losses.append(loss.item())
+
+        model.eval()
+        for word1, word2, labels in valid_loader:
+            out = model(word1, word2)
+            _, predictions = torch.max(out, 1)
+            loss = binary_class_cross_entropy(out, labels)
+            valid_losses.append(loss.item())
+            _, accur = get_accuracy(predictions.tolist(), labels)
+
+        # calculate average loss over an epoch
+        train_loss = np.average(train_losses)
+        valid_loss = np.average(valid_losses)
+
+        if (lowest_loss - valid_loss > tolerance):
+            lowest_loss = valid_loss
+            current_patience = 0
+            # here also model should be saved in the future
+        else:
+            current_patience += 1
+        if current_patience > config["patience"]:
+            break
+        # append average loss to list for all epochs
+        avg_train_losses.append(train_loss)
+        avg_valid_losses.append(valid_loss)
+        accuracies.append(accur)
+
+        logger.info("current patience: %d , epoch %d , train_loss: %.5f, validation loss: %.5f, accuracy: %.5f " %
+                    (current_patience, epoch, train_loss, valid_loss, accur))
+        # set back lists and numbers for next epoch
+        train_losses = []
+        valid_losses = []
+        accur = 0
+
+    return (avg_train_losses, avg_valid_losses, accuracies, model)
 
 def train_multiclass(config, train_loader, valid_loader):
     """
@@ -41,12 +95,14 @@ def train_multiclass(config, train_loader, valid_loader):
     valid_losses = []
     avg_train_losses = []
     avg_valid_losses = []
-
+    accuracies = []
+    accur = 0
     for epoch in range(1, config["num_epochs"]+1):
+
         model.train()
         for word1, word2, labels in train_loader:
-            predictions = model(word1, word2)
-            loss = multi_class_cross_entropy(predictions, labels)
+            out = model(word1, word2)
+            loss = multi_class_cross_entropy(out, labels)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -54,9 +110,11 @@ def train_multiclass(config, train_loader, valid_loader):
 
         model.eval()
         for word1, word2, labels in valid_loader:
-            predictions = model(word1, word2)
-            loss = multi_class_cross_entropy(predictions, labels)
+            out = model(word1, word2)
+            _, predictions = torch.max(out, 1)
+            loss = multi_class_cross_entropy(out, labels)
             valid_losses.append(loss.item())
+            _, accur = get_accuracy(predictions.tolist(), labels)
 
         # calculate average loss over an epoch
         train_loss = np.average(train_losses)
@@ -73,12 +131,16 @@ def train_multiclass(config, train_loader, valid_loader):
         # append average loss to list for all epochs
         avg_train_losses.append(train_loss)
         avg_valid_losses.append(valid_loss)
-        # set back lists for next epoch
+        accuracies.append(accur)
+
+        logger.info("current patience: %d , epoch %d , train_loss: %.5f, validation loss: %.5f, accuracy: %.5f " %
+                    (current_patience, epoch, train_loss, valid_loss, accur))
+        # set back lists and numbers for next epoch
         train_losses = []
         valid_losses = []
-        logger.info("current patience: %d , epoch %d , train_loss: %.5f validation loss: %.5f" %
-                    (current_patience, epoch, train_loss, valid_loss))
-    return (avg_train_losses, avg_valid_losses, model)
+        accur = 0
+
+    return (avg_train_losses, avg_valid_losses, accuracies, model)
 
 
 def predict(test_loader, model, config): # for test set
@@ -106,13 +168,13 @@ def predict(test_loader, model, config): # for test set
 
 
 
-def do_eval(predictions, labels):
+def get_accuracy(predictions, labels):
     correct = 0
     for p, l in zip(predictions, labels):
         if p == l:
             correct +=1
-    print((correct/len(predictions)), correct)
-    return correct, (correct/len(predictions))
+    accuracy = correct/len(predictions)
+    return correct, accuracy
 
 
 def save_predictions():
@@ -124,17 +186,22 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("path_to_config")
     argp = argp.parse_args()
+
     with open(argp.path_to_config, 'r') as f: # read in arguments and save them into a configuration object
-        config = json.load(f)
+        config = json.load(f)                   # maybe close stream?
 
         ts = time.gmtime()
-        save_name = format("%s_%s" % (config["model"]["type"], time.strftime("%Y-%m-%d-%H_%M_%S", ts)))   # change names
+
+        #if name is specified choose specified name to save logging file, else use default name
+        if config["save_name"] == "":
+            save_name = format("%s_%s" % (config["model"]["type"], time.strftime("%Y-%m-%d-%H_%M_%S", ts)))  # change names
+        else:
+            save_name = format("%s_%s" % (config["save_name"], time.strftime("%Y-%m-%d-%H_%M_%S", ts)))   # change names
 
         log_file = str(Path(config["logging_path"]).joinpath(save_name + "_log.txt"))  # change location
 
         logging.config.dictConfig(create_config(log_file))
         logger = logging.getLogger("train")
-
         logger.info("Training %s model with %s embeddings. Logging to %s" % (config["model"]["type"], config["feature_extractor"], log_file))
 
 
@@ -174,27 +241,20 @@ if __name__ == "__main__":
         test_labels = [l for w1,w2,l in dataset_test]
 
 
-    logger.info("%d training batches" % config["iterator"]["batch_size"])
-    logger.info("the training data contains %d words" % len(dataset_train))
-    logger.info("the validation data contains %d words" % len(dataset_valid))
-    logger.info("the test data contains %d words" % len(dataset_test))
+        logger.info("%d training batches" % config["iterator"]["batch_size"])
+        logger.info("the training data contains %d words" % len(dataset_train))
+        logger.info("the validation data contains %d words" % len(dataset_valid))
+        logger.info("the test data contains %d words" % len(dataset_test))
 
 
-    #train & test and & evaluate
-    if config["model"]["classification"] == "multi":
-        avg_train_losses, avg_valid_losses, model = train_multiclass(config, train_loader, valid_loader)
-        predictions, test_loss = predict(test_loader, model, config)
-        accuracy = do_eval(predictions, test_labels)
-    elif config["model"]["classification"] == "binary":
-        avg_train_losses, avg_valid_losses, model = train_binary(config, train_loader, valid_loader)
-        predictions, test_loss = predict(test_loader, model, config)
-        accuracy = do_eval(predictions, test_labels)
-    else:
-        print("classification has to be specified as either multi or binary")
-
-
-    #comments Neele
-    # classifier, hidden_layer dropout, path to dataset, hidden dimension, binary classification, no of epochs, gpu, learningrate
-    # initialize model, optimizer, create logger
-    # training loop for binary classification (+ validation)
-    # training loop for multiclass classification (+ validation)
+        #train & test and & evaluate
+        if config["model"]["classification"] == "multi":
+            avg_train_losses, avg_valid_losses, accuracies, model = train_multiclass(config, train_loader, valid_loader)
+            predictions, test_loss = predict(test_loader, model, config)
+            accuracy =get_accuracy(predictions, test_labels)
+        elif config["model"]["classification"] == "binary":
+            avg_train_losses, avg_valid_losses, accuracies, model = train_binary(config, train_loader, valid_loader)
+            predictions, test_loss = predict(test_loader, model, config)
+            accuracy = get_accuracy(predictions, test_labels)
+        else:
+            print("classification has to be specified as either multi or binary")
