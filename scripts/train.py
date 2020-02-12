@@ -1,9 +1,7 @@
-from scripts.basic_twoword_classifier import BasicTwoWordClassifier
 from scripts.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 import torch
 from torch import optim
 import numpy as np
-import logging
 import logging.config
 from scripts.logger_config import create_config
 import argparse
@@ -26,7 +24,7 @@ def train_binary(config, train_loader, valid_loader):
     """
     pass
 
-def train_multiclass(config, train_loader, lowest_loss):
+def train_multiclass(config, train_loader, valid_loader):
     """
     method to train a multiclass classification model
     :param config: config json file
@@ -58,7 +56,6 @@ def train_multiclass(config, train_loader, lowest_loss):
         for word1, word2, labels in valid_loader:
             predictions = model(word1, word2)
             loss = multi_class_cross_entropy(predictions, labels)
-            print(loss, type(loss))
             valid_losses.append(loss.item())
 
         # calculate average loss over an epoch
@@ -79,8 +76,6 @@ def train_multiclass(config, train_loader, lowest_loss):
         # set back lists for next epoch
         train_losses = []
         valid_losses = []
-        print("current patience: %d , epoch %d , train_loss: %d validation loss: %d" %
-              (current_patience, epoch, train_loss, valid_loss))
         logger.info("current patience: %d , epoch %d , train_loss: %.5f validation loss: %.5f" %
                     (current_patience, epoch, train_loss, valid_loss))
     return (avg_train_losses, avg_valid_losses, model)
@@ -97,25 +92,31 @@ def predict(test_loader, model, config): # for test set
     test_loss = []
     predictions = []
     for word1, word2, labels in test_loader:
-        prediction = model(word1, word2)
-        predictions.append(prediction)
+        out = model(word1, word2)
+        _, prediction = torch.max(out, 1)
+        predictions.append(prediction.tolist())
         if config["model"]["classification"] == "multi":
-            test_loss.append(multi_class_cross_entropy(prediction, labels))
+            test_loss.append(multi_class_cross_entropy(out, labels))
         else: #binary
-            test_loss.append(binary_class_cross_entropy(prediction, labels))
+            test_loss.append(binary_class_cross_entropy(out, labels))
+    predictions =  [item for sublist in predictions for item in sublist] # flatten list
+
     return (predictions, test_loss)
 
 
 
-def save_predictions():
-    pass
 
 def do_eval(predictions, labels):
+    correct = 0
     for p, l in zip(predictions, labels):
-        print("preds", p,l)
+        if p == l:
+            correct +=1
+    print((correct/len(predictions)), correct)
+    return correct, (correct/len(predictions))
 
 
-
+def save_predictions():
+    pass
 
 
 if __name__ == "__main__":
@@ -152,6 +153,7 @@ if __name__ == "__main__":
                                                               config["feature_extractor"]["static"]["pretrained_model"])
 
 
+
         #load data with torch Data Loader
         train_loader = DataLoader(dataset_train,
                                   batch_size=config["iterator"]["batch_size"],
@@ -169,20 +171,26 @@ if __name__ == "__main__":
                                                   num_workers=0)
 
 
-
-        logger.info("%d training batches" % config["iterator"]["batch_size"])
-        logger.info("the training data contains %d words" % len(train_loader))
+        test_labels = [l for w1,w2,l in dataset_test]
 
 
-        #train & test and & evaluate
-        if config["model"]["classification"] == "multi":
-            avg_train_losses, avg_valid_losses, model = train_multiclass(config, train_loader, valid_loader)
-            predictions, test_loss = predict(test_loader, model, config)
-        elif config["model"]["classification"] == "binary":
-            avg_train_losses, avg_valid_losses, model = train_binary(config, train_loader, valid_loader)
-            predictions, test_loss = predict(test_loader, model, config)
-        else:
-            print("classification has to be specified as either multi or binary")
+    logger.info("%d training batches" % config["iterator"]["batch_size"])
+    logger.info("the training data contains %d words" % len(dataset_train))
+    logger.info("the validation data contains %d words" % len(dataset_valid))
+    logger.info("the test data contains %d words" % len(dataset_test))
+
+
+    #train & test and & evaluate
+    if config["model"]["classification"] == "multi":
+        avg_train_losses, avg_valid_losses, model = train_multiclass(config, train_loader, valid_loader)
+        predictions, test_loss = predict(test_loader, model, config)
+        accuracy = do_eval(predictions, test_labels)
+    elif config["model"]["classification"] == "binary":
+        avg_train_losses, avg_valid_losses, model = train_binary(config, train_loader, valid_loader)
+        predictions, test_loss = predict(test_loader, model, config)
+        accuracy = do_eval(predictions, test_labels)
+    else:
+        print("classification has to be specified as either multi or binary")
 
 
     #comments Neele
