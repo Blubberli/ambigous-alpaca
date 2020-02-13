@@ -62,6 +62,12 @@ def get_datasets(config):
 
 
 def convert_logits_to_binary_predictions(logits):
+    """
+    This method takse raw scores from a binary classifier and converts them into 0 and 1 respectively. The scores
+    are expected to be unnormalized, a sigmoid is applied in this method
+    :param logits: a list of class scores
+    :return: a list of predictions (0 and 1)
+    """
     predictions = torch.sigmoid(logits)
     predictions = [0 if x < 0.5 else 1 for x in predictions]
     return predictions
