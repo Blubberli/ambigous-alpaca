@@ -43,7 +43,14 @@ class BertExtractor:
         assert target_word in sentence, "target word must be contained in the context sentence!"
         sentence_indices = self.tokenizer.encode(sentence, add_special_tokens=True)
         word_indices = self.tokenizer.encode(target_word, add_special_tokens=False)
-        all_word_indices = [sentence_indices.index(item) for item in word_indices]
+        startindex = 0
+        for i in range(len(sentence_indices)):
+            if sentence_indices[i] == word_indices[0] and sentence_indices[i:i + len(word_indices)] == word_indices:
+                startindex = i
+
+                break
+
+        all_word_indices = [startindex + len(word_indices)-1]
         return all_word_indices
 
     @staticmethod

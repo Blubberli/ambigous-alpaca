@@ -10,7 +10,7 @@ Die Dame trägt einen kleinen Hamster .	kleinen Hamster	Dimension
 Du bist ein dickes Mädchen .	dickes Mädchen	Dimension
 Er trägt einen spitzen Bart .	spitzen Bart	Form
 Wir fahren eine eckige Kutsche .	eckige Kutsche	Form
-Du bist ein winziges Männchen .	winziges Mädchen	Dimension
+Du bist ein winziges Männchen .	winziges Männchen	Dimension
 Lena kauft ein grünes Kleid .	grünes Kleid	Farbe
 Opa hat ein weißes Auto .	weißes Auto	Farbe
 Er hat eine orangene Jacke .	orangene Jacke	Farbe
