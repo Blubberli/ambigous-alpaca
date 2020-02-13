@@ -4,13 +4,14 @@
   "test_data_path": "../tests/data_binary_classification/test.txt",
   "logging_path": "logger",
   "save_name" : "test_runs_",
+  "model_path" : "trained_models",
   "eval_on_test" : true,
 
   "model": {
     "type": "transweigh_twoword",
     "classification": "binary",
     "dropout": 0.2,
-    "input_dim" : 768,
+    "input_dim" : 300,
     "hidden_size": 200,
     "label_size" : 1,
     "activation": "relu",
@@ -18,8 +19,8 @@
     "normalize_embeddings" : false
   },
   "feature_extractor": {
-    "contextualized_embeddings": true,
-    "static_embeddings": false,
+    "contextualized_embeddings": false,
+    "static_embeddings": true,
     "contextualized": {
       "bert": ["bert-base-german-cased", 200, false]
     },
