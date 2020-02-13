@@ -179,6 +179,12 @@ def predict(test_loader, model, config):  # for test set
 
 
 def get_accuracy(predictions, labels):
+    """
+    Given an list of class predictions and a list of labels, this method returns the accuracy
+    :param predictions: a list of class predictions [int]
+    :param labels: a list of labels [int]
+    :return: [float] accuracy for given predictions and true class labels
+    """
     correct = 0
     for p, l in zip(predictions, labels):
         if p == l:
