@@ -41,8 +41,6 @@ def train_binary(config, train_loader, valid_loader):
 
         for word1, word2, labels in train_loader:
             out = model(word1, word2, True).squeeze()
-
-            #print(out)
             loss = binary_class_cross_entropy(out, labels.float())
             loss.backward()
             optimizer.step()
