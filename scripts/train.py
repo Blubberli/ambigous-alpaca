@@ -12,7 +12,7 @@ from scripts.training_utils import init_classifier, get_datasets, convert_logits
 from scripts.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 
 
-def train_binary(config, train_loader, valid_loader):
+def train_binary(config, train_loader, valid_loader, model_path):
     """
     method to train a binary classification model
     :param config: config json file
@@ -66,6 +66,7 @@ def train_binary(config, train_loader, valid_loader):
             best_epoch = epoch
             best_accuracy = valid_accuracy
             current_patience = 0
+            torch.save(model.state_dict(), model_path)
             # here also model should be saved in the future
         else:
             current_patience += 1
@@ -81,7 +82,7 @@ def train_binary(config, train_loader, valid_loader):
     return model
 
 
-def train_multiclass(config, train_loader, valid_loader):
+def train_multiclass(config, train_loader, valid_loader, model_path):
     """
     method to train a multiclass classification model
     :param config: config json file
@@ -134,7 +135,7 @@ def train_multiclass(config, train_loader, valid_loader):
             best_epoch = epoch
             best_accuracy = valid_accuracy
             current_patience = 0
-            # here also model should be saved in the future
+            torch.save(model.state_dict(), model_path)
         else:
             current_patience += 1
         if current_patience > config["patience"]:
@@ -191,8 +192,8 @@ def get_accuracy(predictions, labels):
     return correct, accuracy
 
 
-def save_predictions():
-    pass
+def save_predictions(predictions, path):
+    np.save(file=path, arr=np.array(predictions), allow_pickle=True)
 
 
 if __name__ == "__main__":
@@ -214,11 +215,15 @@ if __name__ == "__main__":
         save_name = format("%s_%s" % (config["save_name"], time.strftime("%Y-%m-%d-%H_%M_%S", ts)))  # change names
 
     log_file = str(Path(config["logging_path"]).joinpath(save_name + "_log.txt"))  # change location
+    model_path = str(Path(config["model_path"]).joinpath(save_name))
+    prediction_path_dev = str(Path(config["model_path"]).joinpath(save_name + "_dev_predictions.npy"))
+    prediction_path_test = str(Path(config["model_path"]).joinpath(save_name + "_test_predictions.npy"))
+
 
     logging.config.dictConfig(create_config(log_file))
     logger = logging.getLogger("train")
-    logger.info("Training %s model with %s embeddings. \n Logging to %s" % (
-        config["model"]["type"], config["feature_extractor"], log_file))
+    logger.info("Training %s model with %s embeddings. \n Logging to %s \n Save model to %s" % (
+        config["model"]["type"], config["feature_extractor"], log_file, model_path))
 
     # set random seed
     np.random.seed(config["seed"])
@@ -251,22 +256,26 @@ if __name__ == "__main__":
 
     # train
     if config["model"]["classification"] == "multi":
-        model = train_multiclass(config, train_loader, valid_loader)
+        model = train_multiclass(config, train_loader, valid_loader, model_path)
     elif config["model"]["classification"] == "binary":
-        model = train_binary(config, train_loader, valid_loader)
+        model = train_binary(config, train_loader, valid_loader, model_path)
     else:
         print("classification has to be specified as either multi or binary")
 
     # test and & evaluate
-    # loading best model from checkpoint model = load_model()
+    logger.info("Loading best model from %s", model_path)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
     if model:
         logger.info("generating predictions for validation data...")
         valid_predictions, valid_loss, valid_acc = predict(valid_loader, model, config)
+        save_predictions(valid_predictions, prediction_path_dev)
         logger.info("validation loss: %.5f, validation accuracy : %.5f" %
                     (valid_loss, valid_acc))
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
             test_predictions, test_loss, test_acc = predict(test_loader, model, config)
+            save_predictions(test_predictions, prediction_path_test)
             logger.info("test loss: %.5f, test accuracy : %.5f" %
                         (test_loss, test_acc))
     else:
