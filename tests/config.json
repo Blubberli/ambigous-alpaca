@@ -21,7 +21,12 @@
     "contextualized_embeddings": true,
     "static_embeddings": false,
     "contextualized": {
-      "bert": ["bert-base-german-cased", 200, false]
+      "bert": {
+        "model" : "bert-base-german-cased",
+        "max_sent_len" : 200,
+        "lower_case" : false,
+        "batch_size" : 100
+      }
     },
 
     "static": {

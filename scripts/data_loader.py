@@ -7,9 +7,9 @@ from scripts import BertExtractor, StaticEmbeddingExtractor
 
 class SimplePhraseDataset(ABC, Dataset):
     def __init__(self, data_path, separator="\t", phrase="phrase", label="label"):
-        self._data = pandas.read_csv(data_path, delimiter=separator)
-        self._phrases = self.data[phrase]
-        self._labels = self.data[label]
+        self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
+        self._phrases = list(self.data[phrase])
+        self._labels = list(self.data[label])
         self._label_encoder = LabelEncoder()
         self._labels, self._label2index = self.encode_labels()
 
@@ -79,7 +79,7 @@ class SimplePhraseContextualizedDataset(SimplePhraseDataset):
     """
 
     def __init__(self, data_path, bert_model,
-                 max_len, lower_case, separator="\t", phrase="phrase", label="label", context="context"):
+                 max_len, lower_case, batch_size, separator="\t", phrase="phrase", label="label", context="context"):
         """
 
         :param data_path: [String] The path to the csv datafile that needs to be transformed into a dataset.
@@ -91,9 +91,10 @@ class SimplePhraseContextualizedDataset(SimplePhraseDataset):
         :param label: [String] the label of the column the class label is stored in
         :param context: [String] the label of the column the context sentence is stored in
         """
-        self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case)
+        self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                                batch_size=batch_size)
         super(SimplePhraseContextualizedDataset, self).__init__(data_path)
-        self._sentences = self.data[context]
+        self._sentences = list(self.data[context])
         self._samples = self.populate_samples()
 
     def lookup_embedding(self, words):

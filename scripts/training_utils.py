@@ -37,16 +37,23 @@ def get_datasets(config):
     dataset_valid = None
     if config["feature_extractor"]["contextualized_embeddings"] is True:
         bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
         if config["feature_extractor"]["context"] is False:
             dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
-                                                              bert_model=bert_parameter[0], max_len=bert_parameter[1],
-                                                              lower_case=bert_parameter[2])
+                                                              bert_model=bert_model,
+                                                              lower_case=lower_case, max_len=max_len,
+                                                              batch_size=batch_size)
             dataset_valid = SimplePhraseContextualizedDataset(data_path=config["validation_data_path"],
-                                                              bert_model=bert_parameter[0], max_len=bert_parameter[1],
-                                                              lower_case=bert_parameter[2])
+                                                              bert_model=bert_model,
+                                                              lower_case=lower_case, max_len=max_len,
+                                                              batch_size=batch_size)
             dataset_test = SimplePhraseContextualizedDataset(data_path=config["test_data_path"],
-                                                             bert_model=bert_parameter[0], max_len=bert_parameter[1],
-                                                             lower_case=bert_parameter[2])
+                                                             bert_model=bert_model,
+                                                             lower_case=lower_case, max_len=max_len,
+                                                             batch_size=batch_size)
     else:
         dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
                                                   embedding_path=config["feature_extractor"]["static"][
