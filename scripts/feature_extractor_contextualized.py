@@ -116,9 +116,9 @@ class BertExtractor:
                  all_layers: all 12 layers for each token within each sentence.
         """
         with torch.no_grad():
-            last_hidden_states, _, all_layers = self.model(input_ids=torch.tensor(batch_input_ids),
-                                                           attention_mask=torch.tensor(batch_attention_mask),
-                                                           token_type_ids=torch.tensor(batch_token_type_ids))
+            last_hidden_states, _, all_layers = self.model(input_ids=torch.tensor(batch_input_ids).to(self.device),
+                                                           attention_mask=torch.tensor(batch_attention_mask).to(self.device),
+                                                           token_type_ids=torch.tensor(batch_token_type_ids).to(self.device))
         return last_hidden_states, all_layers
 
     @staticmethod
