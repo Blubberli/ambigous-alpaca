@@ -1,10 +1,12 @@
+import numpy as np
 import torch
 from transformers import BertTokenizer, BertModel
+import progressbar
 
 
 class BertExtractor:
 
-    def __init__(self, bert_model, max_len, lower_case):
+    def __init__(self, bert_model, max_len, lower_case, batch_size):
         """
         This class contains methods to extract contextualized word embeddings with a given Bert model.
         :param bert_model: which of the pretrained Bert model should be loaded.
@@ -12,10 +14,14 @@ class BertExtractor:
         batches and is more efficient
         :param lower_case: whether to lower case or not
         """
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._model = BertModel.from_pretrained(bert_model, output_hidden_states=True)
+        # move model to GPU if available
+        self.model.to(self.device)
         self._model.eval()
         self._tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=lower_case)
         self._max_len = max_len
+        self._batch_size = batch_size
 
     def convert_sentence_to_indices(self, sentence):
         """
@@ -47,11 +53,9 @@ class BertExtractor:
         for i in range(len(sentence_indices)):
             if sentence_indices[i] == word_indices[0] and sentence_indices[i:i + len(word_indices)] == word_indices:
                 startindex = i
-
                 break
+        return np.arange(startindex, startindex+len(word_indices))
 
-        all_word_indices = [startindex + len(word_indices)-1]
-        return all_word_indices
 
     @staticmethod
     def get_single_word_embedding(token_embeddings, target_word_indices):
@@ -68,6 +72,21 @@ class BertExtractor:
             target_word_tokens = token_embeddings[
                                  target_word_indices[0]:target_word_indices[len(target_word_indices) - 1]]
             return target_word_tokens.sum(0) / target_word_tokens.shape[0]
+
+    def get_sentence_batches(self, sentences):
+        """
+        This method splits a list of sentences into batches for efficient processing.
+        :param sentences: [String] A list of sentences
+        :return: A list of lists, each list except the last element are of length batchsize.
+        """
+        sentence_batches = []
+
+        for i in range(0, len(sentences), self.batch_size):
+            if i + self.batch_size - 1 > len(sentences):
+                sentence_batches.append(sentences[i:])
+            else:
+                sentence_batches.append(sentences[i:i + self.batch_size])
+        return sentence_batches
 
     def convert_sentence_batch_to_indices(self, sentences):
         """
@@ -97,9 +116,9 @@ class BertExtractor:
                  all_layers: all 12 layers for each token within each sentence.
         """
         with torch.no_grad():
-            last_hidden_states, _, all_layers = self.model(input_ids=torch.tensor(batch_input_ids),
-                                                           attention_mask=torch.tensor(batch_attention_mask),
-                                                           token_type_ids=torch.tensor(batch_token_type_ids))
+            last_hidden_states, _, all_layers = self.model(input_ids=torch.tensor(batch_input_ids).to(self.device),
+                                                           attention_mask=torch.tensor(batch_attention_mask).to(self.device),
+                                                           token_type_ids=torch.tensor(batch_token_type_ids).to(self.device))
         return last_hidden_states, all_layers
 
     @staticmethod
@@ -130,18 +149,26 @@ class BertExtractor:
         bert
         """
         assert len(sentences) == len(target_words), "for every sentence exactly one target word needs to be given."
-        batch_input_ids, batch_token_type_ids, batch_attention_mask = self.convert_sentence_batch_to_indices(sentences)
-        # shape last_hidden_states : batch_size x max_len x embedding_dim
-        last_hidden_states, all_layers = self.get_bert_vectors(batch_input_ids=batch_input_ids,
-                                                               batch_attention_mask=batch_attention_mask,
-                                                               batch_token_type_ids=batch_token_type_ids)
+        # split sentence and target words into batches
+
+        sentence_batches = self.get_sentence_batches(sentences)
+        target_word_batches = self.get_sentence_batches(target_words)
         contextualized_embeddings = []
-        for i in range(len(sentences)):
-            target_word_indices = self.word_indices_in_sentence(sentences[i], target_words[i])
-            token_embeddings = last_hidden_states[i]
-            contextualized_emb = self.get_single_word_embedding(token_embeddings=token_embeddings,
-                                                                target_word_indices=target_word_indices)
-            contextualized_embeddings.append(contextualized_emb)
+        # extract bert vectors for each batch
+        for i in progressbar.progressbar(range(0, len(sentence_batches))):
+            current_sentences = sentence_batches[i]
+            current_target_words = target_word_batches[i]
+            batch_input_ids, batch_token_type_ids, batch_attention_mask = self.convert_sentence_batch_to_indices(current_sentences)
+            # shape last_hidden_states : batch_size x max_len x embedding_dim
+            last_hidden_states, all_layers = self.get_bert_vectors(batch_input_ids=batch_input_ids,
+                                                                   batch_attention_mask=batch_attention_mask,
+                                                                   batch_token_type_ids=batch_token_type_ids)
+            for i in range(len(current_sentences)):
+                target_word_indices = self.word_indices_in_sentence(current_sentences[i], current_target_words[i])
+                token_embeddings = last_hidden_states[i]
+                contextualized_emb = self.get_single_word_embedding(token_embeddings=token_embeddings,
+                                                                    target_word_indices=target_word_indices)
+                contextualized_embeddings.append(contextualized_emb.to("cpu"))
         return torch.stack(contextualized_embeddings)
 
     @property
@@ -155,3 +182,11 @@ class BertExtractor:
     @property
     def max_len(self):
         return self._max_len
+
+    @property
+    def batch_size(self):
+        return self._batch_size
+
+    @property
+    def device(self):
+        return self._device

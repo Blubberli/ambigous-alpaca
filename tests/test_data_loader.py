@@ -18,7 +18,7 @@ class DataLoaderTest(unittest.TestCase):
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
 
         self._contextualized_dataset = SimplePhraseContextualizedDataset(self._data_path, 'bert-base-german-cased', 20,
-                                                                         False)
+                                                                         False, 20)
         self._static_dataset = SimplePhraseStaticDataset(self._data_path, self._embedding_path)
 
     def test_exception(self):

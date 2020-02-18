@@ -1,5 +1,7 @@
+import pathlib
 import numpy as np
 import unittest
+import pandas as pd
 from scripts import BertExtractor
 
 
@@ -11,13 +13,17 @@ class BertExtractorTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.extractor = BertExtractor('bert-base-german-cased', 20, False)
+        self.extractor = BertExtractor('bert-base-german-cased', 20, False, 4)
         s1 = "Der Junge sitzt auf der Bank im Park"
         s2 = "Ich gehe zur Bank um Geld abzuheben"
         s3 = "In der Kirche steht eine Bank aus Holz auf der die Leute sitzen können"
         s4 = "Der Vater arbeitet bei der Bank als Finanzchef"
         self.sentences = [s1, s2, s3, s4]
         self.target_words = ["Bank", "Bank", "Bank", "Bank"]
+        data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/train.txt")
+        test_data = pd.read_csv(data_path, sep="\t")
+        self.sentence_list = list(test_data["context"])
+        self.target_word_list = list(test_data["phrase"])
 
     def test_subword_indices(self):
         """
@@ -27,6 +33,8 @@ class BertExtractorTest(unittest.TestCase):
         """
         indices = self.extractor.word_indices_in_sentence(sentence=self.sentences[1], target_word="Ich")
         np.testing.assert_almost_equal(indices, [1])
+        indices = self.extractor.word_indices_in_sentence(sentence=self.sentences[1], target_word="abzuheben")
+        np.testing.assert_almost_equal(indices, [7, 8])
 
     def test_convert_sentence_to_indices(self):
         """
@@ -82,8 +90,16 @@ class BertExtractorTest(unittest.TestCase):
         batch_input_ids, batch_token_type_ids, batch_attention_mask = self.extractor.convert_sentence_batch_to_indices(
             [self.sentences[3]])
         last_layer, hidden_layers = self.extractor.get_bert_vectors(batch_input_ids, batch_attention_mask,
-                                                                   batch_token_type_ids)
+                                                                    batch_token_type_ids)
         layer_mean = self.extractor.get_mean_layer_pooling(hidden_layers, 0, 12)
         sentence_mean = self.extractor.get_mean_sentence_pooling(last_layer)
         np.testing.assert_almost_equal(layer_mean.shape, [1, 20, 768])
         np.testing.assert_almost_equal(sentence_mean.shape, [1, 768])
+
+    def test_feature_extractor_dataset(self):
+        """Test whether we can extract word embeddings for a larger list of sentences and words"""
+        contextualized_embeddings = self.extractor.get_single_word_representations(self.sentence_list,
+                                                                                   self.target_word_list)
+        np.testing.assert_equal(contextualized_embeddings.shape[0], 105)
+        np.testing.assert_equal(contextualized_embeddings.shape[1], 768)
+
