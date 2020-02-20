@@ -12,7 +12,7 @@ from scripts.training_utils import init_classifier, get_datasets, convert_logits
 from scripts.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 
 
-def train_binary(config, train_loader, valid_loader, model_path):
+def train_binary(config, train_loader, valid_loader, model_path, device):
     """
     method to train a binary classification model
     :param config: config json file
@@ -21,6 +21,7 @@ def train_binary(config, train_loader, valid_loader, model_path):
     :return: the trained model
     """
     model = init_classifier(config)
+    model.to(device)
     optimizer = optim.Adam(model.parameters(),
                            lr=config["trainer"]["optimizer"]["lr"])  # or make an if statement for choosing an optimizer
     current_patience = 0
@@ -41,7 +42,8 @@ def train_binary(config, train_loader, valid_loader, model_path):
 
         for word1, word2, context, context_len, labels in train_loader:
             # context is a list of list of word embeddings
-            out = model(word1, word2, context, context_len, True).squeeze()
+            out = model(word1.to(device), word2.to(device), context.to(device), context_len.to(device), True,
+                        device).squeeze().to("cpu")
             loss = binary_class_cross_entropy(out, labels.float())
             loss.backward()
             optimizer.step()
@@ -50,7 +52,8 @@ def train_binary(config, train_loader, valid_loader, model_path):
         # validation loop over validation batches
         model.eval()
         for word1, word2, context, context_len, labels in valid_loader:
-            out = model(word1, word2, context, context_len, True).squeeze()
+            out = model(word1.to(device), word2.to(device), context.to(device), context_len.to(device), True,
+                        device).squeeze().to("cpu")
             predictions = convert_logits_to_binary_predictions(out)
             loss = binary_class_cross_entropy(out, labels.float())
             valid_losses.append(loss.item())
@@ -83,7 +86,7 @@ def train_binary(config, train_loader, valid_loader, model_path):
     return model
 
 
-def train_multiclass(config, train_loader, valid_loader, model_path):
+def train_multiclass(config, train_loader, valid_loader, model_path, device):
     """
     method to train a multiclass classification model
     :param config: config json file
@@ -109,8 +112,9 @@ def train_multiclass(config, train_loader, valid_loader, model_path):
         train_losses = []
         valid_losses = []
         valid_accuracies = []
-        for word1, word2, labels in train_loader:
-            out = model(word1, word2, True)
+        for word1, word2, context, context_len, labels in train_loader:
+            out = model(word1.to(device), word2.to(device), context.to(device), context_len.to(device), True,
+                        device).squeeze().to("cpu")
             loss = multi_class_cross_entropy(out, labels)
             loss.backward()
             optimizer.step()
@@ -118,8 +122,9 @@ def train_multiclass(config, train_loader, valid_loader, model_path):
             train_losses.append(loss.item())
 
         model.eval()
-        for word1, word2, labels in valid_loader:
-            out = model(word1, word2, False)
+        for word1, word2, context, context_len, labels in valid_loader:
+            out = model(word1.to(device), word2.to(device), context.to(device), context_len.to(device), True,
+                        device).squeeze().to("cpu")
             _, predictions = torch.max(out, 1)
             loss = multi_class_cross_entropy(out, labels)
             valid_losses.append(loss.item())
@@ -163,7 +168,8 @@ def predict(test_loader, model, config):  # for test set
     predictions = []
     accuracy = []
     for word1, word2, context, context_len, labels in test_loader:
-        out = model(word1, word2, context, context_len, True).squeeze()
+        out = model(word1.to(device), word2.to(device), context.to(device), context_len.to(device), True,
+                    device).squeeze().to("cpu")
         if config["model"]["classification"] == "multi":
             test_loss.append(multi_class_cross_entropy(out, labels).item())
             _, prediction = torch.max(out, 1)
@@ -207,8 +213,7 @@ if __name__ == "__main__":
         config = json.load(f)
 
     ts = time.gmtime()
-    print(torch.cuda.is_available())
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # if name is specified choose specified name to save logging file, else use default name
     if config["save_name"] == "":
         save_name = format(
@@ -220,7 +225,6 @@ if __name__ == "__main__":
     model_path = str(Path(config["model_path"]).joinpath(save_name))
     prediction_path_dev = str(Path(config["model_path"]).joinpath(save_name + "_dev_predictions.npy"))
     prediction_path_test = str(Path(config["model_path"]).joinpath(save_name + "_test_predictions.npy"))
-
 
     logging.config.dictConfig(create_config(log_file))
     logger = logging.getLogger("train")
@@ -247,7 +251,7 @@ if __name__ == "__main__":
                                               batch_size=config["iterator"]["batch_size"],
                                               num_workers=0)
 
-    test_labels = [l for w1, w2,_, _, l in dataset_test]
+    test_labels = [l for w1, w2, _, _, l in dataset_test]
     model = None
 
     logger.info("%d training batches" % config["iterator"]["batch_size"])
@@ -257,9 +261,9 @@ if __name__ == "__main__":
 
     # train
     if config["model"]["classification"] == "multi":
-        model = train_multiclass(config, train_loader, valid_loader, model_path)
+        model = train_multiclass(config, train_loader, valid_loader, model_path, device)
     elif config["model"]["classification"] == "binary":
-        model = train_binary(config, train_loader, valid_loader, model_path)
+        model = train_binary(config, train_loader, valid_loader, model_path, device)
     else:
         print("classification has to be specified as either multi or binary")
 
@@ -281,3 +285,4 @@ if __name__ == "__main__":
                         (test_loss, test_acc))
     else:
         logging.error("model could not been loaded correctly")
+    torch.cuda.empty_cache()

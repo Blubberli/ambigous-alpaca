@@ -1,5 +1,5 @@
 import torch
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier
+from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, PhraseContextClassifier
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
 
@@ -23,6 +23,14 @@ def init_classifier(config):
                                                  label_nr=config["model"]["label_size"],
                                                  normalize_embeddings=config["model"]["normalize_embeddings"],
                                                  transformations=config["model"]["transformations"])
+    if config["model"]["type"] == "phrase_context":
+        classifier = PhraseContextClassifier(embedding_dim=config["model"]["input_dim"],
+                                             forward_hidden_dim=config["model"]["hidden_size"],
+                                             label_nr=config["model"]["label_size"],
+                                             dropout_rate=config["model"]["dropout"],
+                                             hidden_size=config["model"]["lstm"]["hidden_size"],
+                                             num_layers=config["model"]["lstm"]["layers"])
+
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
 
