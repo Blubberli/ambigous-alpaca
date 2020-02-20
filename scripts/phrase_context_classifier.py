@@ -45,7 +45,7 @@ class PhraseContextClassifier(nn.Module):
         self.lstm.to(device)
         # forward propagate LSTM
         # out = sum(seq_lenghts), hidden*2
-        out, hidden = self.lstm(context_packed,(h0, c0))
+        out, hidden = self.lstm(context_packed, (h0, c0))
 
         # unpack the sequence
         # out: tensor of shape (batch_size, max_seq_length, hidden_size*2)
@@ -90,23 +90,3 @@ class PhraseContextClassifier(nn.Module):
     @property
     def lstm(self):
         return self._lstm
-
-
-if __name__ == '__main__':
-    import numpy as np
-    # packed sequence               3           3           3               2
-    a = torch.from_numpy(np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])).float()
-    b = torch.from_numpy(np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])).float()
-    c = torch.from_numpy(np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])).float()
-
-    w1 = torch.from_numpy(np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])).float()
-    w2 = torch.from_numpy(np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])).float()
-    batch = [a, b, c]
-    batch = nn.utils.rnn.pad_sequence(batch_first=True, sequences=batch, padding_value=0.0)
-    length = np.array([3, 4, 4])
-
-    c = PhraseContextClassifier(embedding_dim=2, hidden_size=4, num_layers=1, label_nr=1, forward_hidden_dim=3, dropout_rate=0.0)
-
-    out = c(w1, w2, batch, length, True)
-    # print(out)
-    print(out.shape)
