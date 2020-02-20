@@ -45,14 +45,14 @@ Oma schaut eine violette Blume an .	violette Blume	Farbe
 Oma schaut eine dunkelgrüne Blume an .	dunkelgrüne Blume	Farbe
 Du bist ein dünnes Mädchen .	dünnes Mädchen	Dimension
 Ihr spitzes Gesicht ist schön .	spitzes Gesicht	Form
-Warum kann ich keine rote Farbehaben ?	rote Farbe	Farbe
+Warum kann ich keine rote Farbe haben ?	rote Farbe	Farbe
 Der Mann hat ein kleines Kinn .	kleines Kinn	Dimension
 Oma schaut eine pinke Blume an .	pinke Blume	Farbe
 Oma schaut eine orangene Blume an .	orangene Blume	Farbe
 Ich habe einen dreieckigen Mülleimer .	dreieckigen Mülleimer	Form
 Das ist ein winziges Haus.	winziges Haus	Dimension
 Das ist eine lange Zunge .	lange Zunge	Dimension
-Warum kann ich keine dunkelgrüne Farbehaben ?	dunkelgrüne Farbe	Farbe
+Warum kann ich keine dunkelgrüne Farbe haben ?	dunkelgrüne Farbe	Farbe
 Sie kauft einen blauen Rock .	blauen Rock	Farbe
 Wir laufen auf einer ovalen Bahn .	ovalen Bahn	Form
 Das ist eine lange Schlange .	lange Schlange	Dimension
@@ -65,7 +65,7 @@ Das ist eine schmale Schlange .	schmale Schlange	Dimension
 Opa hat ein braunes Auto .	braunes Auto	Farbe
 Wir laufen auf einer ovalen Matte .	ovalen Matte	Form
 Opa hat ein graues Auto .	graues Auto	Farbe
-Warum kann ich keine braune Farbehaben ?	braune Farbe	Farbe
+Warum kann ich keine braune Farbe haben ?	braune Farbe	Farbe
 Wir rollen einen runden Fußball .	runden Fußball	Form
 Du musst dich noch einen kurzen Moment gedulden .	kurzen Moment	Dimension
 Die Dame trägt einen kleinen Vogel .	kleinen Vogel	Dimension
@@ -75,7 +75,7 @@ Der Mann hat ein breites Gesicht .	breites Gesicht	Dimension
 Du musst noch eine kurze Weile warten .	kurze Weile	Dimension
 Wir liegen auf einem ovalen Teppich .	ovalen Teppich	Form
 Laura klaut ein rechteckiges Telefon .	rechteckiges Telefon	Form
-Warum kann ich keine beige Farbehaben ?	beige Farbe	Farbe
+Warum kann ich keine beige Farbe haben ?	beige Farbe	Farbe
 Ich habe einen dreieckigen Käfig .	dreieckigen Käfig	Form
 Es gibt dort eine eckige Schublade .	eckige Schublade	Form
 Der viereckige Rahmen steht auf dem Tisch .	viereckige Rahmen	Form
@@ -84,14 +84,14 @@ Opa hat ein blaues Auto .	blaues Auto	Farbe
 Lena kauft ein pinkes Kleid .	pinkes Kleid	Farbe
 Es gibt dort eine eckige Bank .	eckige Bank	Form
 Das ist ein breites Haus .	breites Haus	Dimension
-Warum kann ich keine hellblaue Farbehaben ?	hellblaue Farbe	Farbe
+Warum kann ich keine hellblaue Farbe haben ?	hellblaue Farbe	Farbe
 Ich habe einen dreieckigen Schlips .	dreieckigen Schlips	Form
-Warum kann ich keine violette Farbehaben ?	violette Farbe	Farbe
+Warum kann ich keine violette Farbe haben ?	violette Farbe	Farbe
 Das ist eine lange Schlinge .	lange Schlinge	Dimension
 Der viereckige Kalender steht auf dem Tisch .	viereckige Kalender	Form
 Oma schaut eine grüne Blume an .	grüne Blume	Farbe
 Das viereckige Foto steht auf dem Tisch .	viereckige Foto	Form
-Warum kann ich keine gelbe Farbehaben ?	gelbe Farbe	Farbe
+Warum kann ich keine gelbe Farbe haben ?	gelbe Farbe	Farbe
 Das ist ein schmales Haus .	schmales Haus	Dimension
 Wir fahren ein viereckiges Auto .	viereckiges Auto	Form
 Wir fahren ein eckiges Bobbycar .	eckiges Bobbycar	Form
@@ -101,6 +101,6 @@ Opa hat ein rotes Auto .	rotes Auto	Farbe
 Der Mann hat ein breites Kinn .	breites Kinn	Dimension
 Ich komme in kurzer Zeit .	kurzer Zeit	Dimension
 Ich schreibe auf dem viereckigen Blatt .	viereckigen Blatt	Form
-Warum kann ich keine graue Farbehaben ?	graue Farbe	Farbe
+Warum kann ich keine graue Farbe haben ?	graue Farbe	Farbe
 Ich habe einen dreieckigen Hut .	dreieckigen Hut	Form
 Es gibt dort eine eckige Kante .	eckige Kante	Form

@@ -38,6 +38,9 @@
     "context": false,
     "sentence_pooling": "mean"
   },
+  "sequence" : {
+    "tokenizer" : "de_CMC"
+  },
   "iterator": {
     "type": "basic",
     "batch_size": 64
