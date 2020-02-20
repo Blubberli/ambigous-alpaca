@@ -10,4 +10,4 @@ from scripts.transweigh_twoword_classifier import TransweighTwoWordClassifier
 from scripts.data_loader import SimplePhraseStaticDataset, SimplePhraseContextualizedDataset
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset
-
+from scripts.phrase_context_classifier import PhraseContextClassifier
