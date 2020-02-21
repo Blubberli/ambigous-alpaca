@@ -10,6 +10,7 @@ class TransferCompClassifier(nn.Module):
         """
         initialises the transweigh composition model (the transformation tensor and bias as well as the combining tensor and bias) with weights from saved model
         the weights for the classifier are not loaded from the saved model
+        is based on trasnweigh_twoword_classifier
         :param input_dim: size of input dimension
         :param hidden_dim: size of hidden dimension
         :param label_nr: nr of labels to be predicted
