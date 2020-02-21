@@ -5,6 +5,7 @@
   "logging_path": "logger",
   "save_name" : "test_runs_",
   "model_path" : "trained_models",
+  "pretrained_model_path": "/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/trained_models/test_runs__2020-02-18-09_20_20",
   "eval_on_test" : true,
 
   "model": {
