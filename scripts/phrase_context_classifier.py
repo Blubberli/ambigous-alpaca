@@ -31,21 +31,15 @@ class PhraseContextClassifier(nn.Module):
 
     def forward(self, word1, word2, context, context_lengths, training, device):
         # context size = batchsize x max len x embedding dim
-
-        # Set initial states
-        # shape = 2 (=bidirectional), batch_size, hidden_size
-        h0 = torch.zeros(self.num_layers * 2, context.size(0), self.hidden_size).to(device)  # 2 for bidirectional LSTM
-        c0 = torch.zeros(self.num_layers * 2, context.size(0), self.hidden_size).to(device)
-
         # convert the padded context into a packed sequence such that the padded vectors are not shown to the LSTM
         # context_packed = sum of all seq lenghts, embedding_dim
         # batch_sizes = column-wise (how many real elements do I have?)
         context_packed = nn.utils.rnn.pack_padded_sequence(context, context_lengths, batch_first=True,
                                                            enforce_sorted=False)
         self.lstm.to(device)
-        # forward propagate LSTM
+        # forward propagate LSTM, initial states are set to 0 per default
         # out = sum(seq_lenghts), hidden*2
-        out, hidden = self.lstm(context_packed, (h0, c0))
+        out, hidden = self.lstm(context_packed)
 
         # unpack the sequence
         # out: tensor of shape (batch_size, max_seq_length, hidden_size*2)
@@ -90,3 +84,4 @@ class PhraseContextClassifier(nn.Module):
     @property
     def lstm(self):
         return self._lstm
+
