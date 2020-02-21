@@ -30,8 +30,7 @@ class TransferCompClassifier(nn.Module):
         self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
 
-
-    def forward(self,word1, word2, training):
+    def forward(self, word1, word2, training):
         """
         First composes the input vectors into one representation. This is then feed trough a hidden layer with a Relu and
         finally trough an output layer that returns weights for each class.
@@ -47,7 +46,7 @@ class TransferCompClassifier(nn.Module):
         class_weights = self.output(hidden)
         return class_weights
 
-    def compose(self,word1, word2, training):
+    def compose(self, word1, word2, training):
         composed_phrase = transweigh(word1=word1, word2=word2, transformation_tensor=self.transformation_tensor,
                                      transformation_bias=self.transformation_bias, combining_bias=self.combining_bias,
                                      combining_tensor=self.combining_tensor, dropout_rate=self.dropout_rate,
