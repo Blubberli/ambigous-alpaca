@@ -2,6 +2,7 @@ import unittest
 from scripts import TransferCompClassifier
 from torch import optim
 import torch
+import pathlib
 import numpy as np
 
 
@@ -13,7 +14,8 @@ class TransferCompClassifierTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.path_to_saved_model = "/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/trained_models/test_runs__2020-02-18-09_20_20"
+        self.path_to_saved_model = pathlib.Path(__file__).parent.absolute().joinpath(
+            "models/transweighclassifier_2020-02-26-08_58_55")
         self._pretrained_model = torch.load(self.path_to_saved_model)
 
         self.model = TransferCompClassifier(input_dim=4, hidden_dim=2, label_nr=1,
@@ -49,7 +51,8 @@ class TransferCompClassifierTest(unittest.TestCase):
         model_combination_bias = self._pretrained_model["_combining_bias"]
 
         np.testing.assert_equal((torch.sum(self.access_named_parameter(self.model,
-                                                                       "_transformation_tensor") - model_transformation_tensor).item()) == 0.0,
+                                                                       "_transformation_tensor") -
+                                           model_transformation_tensor).item()) == 0.0,
                                 True)
         np.testing.assert_equal((torch.sum(
             self.access_named_parameter(self.model, "_transformation_bias") - model_transformation_bias).item()) == 0.0,
@@ -66,7 +69,8 @@ class TransferCompClassifierTest(unittest.TestCase):
         parameters should be different from saved model apart from output bias
         at the same time also tests whether the right parameters are trainable, because otherwise they wouldn't
         be selected in the static method
-        remark: shapes of course differ from saved model to saved model but we can expect a saved model with higher nr of dimensions than testing model
+        remark: shapes of course differ from saved model to saved model but we can expect a saved model with higher
+        nr of dimensions than testing model
         """
         pretrained_model_hidden_weight = self._pretrained_model["_hidden.weight"]
         pretrained_model_hidden_bias = self._pretrained_model["_hidden.bias"]
@@ -86,4 +90,3 @@ class TransferCompClassifierTest(unittest.TestCase):
         np.testing.assert_equal(
             pretrained_model_output_bias.shape == self.access_named_parameter(self.model, "_output.bias").shape,
             True)
-
