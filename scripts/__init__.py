@@ -11,3 +11,7 @@ from scripts.transfer_comp_classifier import TransferCompClassifier
 from scripts.data_loader import SimplePhraseStaticDataset, SimplePhraseContextualizedDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
 
+
+from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset
+from scripts.phrase_context_classifier import PhraseContextClassifier
+

@@ -17,7 +17,11 @@
     "label_size" : 1,
     "activation": "relu",
     "transformations" : 100,
-    "normalize_embeddings" : false
+    "normalize_embeddings" : false,
+    "lstm": {
+      "hidden_size": 200,
+      "layers": 1
+    }
   },
   "feature_extractor": {
     "contextualized_embeddings": false,
