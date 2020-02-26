@@ -1,5 +1,9 @@
 import torch
+
 from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, PhraseContextClassifier
+
+from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier
+
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
 
@@ -23,6 +27,7 @@ def init_classifier(config):
                                                  label_nr=config["model"]["label_size"],
                                                  normalize_embeddings=config["model"]["normalize_embeddings"],
                                                  transformations=config["model"]["transformations"])
+
     if config["model"]["type"] == "phrase_context":
         classifier = PhraseContextClassifier(embedding_dim=config["model"]["input_dim"],
                                              forward_hidden_dim=config["model"]["hidden_size"],
@@ -30,6 +35,15 @@ def init_classifier(config):
                                              dropout_rate=config["model"]["dropout"],
                                              hidden_size=config["model"]["lstm"]["hidden_size"],
                                              num_layers=config["model"]["lstm"]["layers"])
+
+    if config["model"]["type"] == "transfer_twoword":
+        classifier = TransferCompClassifier(input_dim=config["model"]["input_dim"],
+                                                 hidden_dim=config["model"]["hidden_size"],
+                                                 dropout_rate=config["model"]["dropout"],
+                                                 label_nr=config["model"]["label_size"],
+                                                 normalize_embeddings=config["model"]["normalize_embeddings"],
+                                                 pretrained_model=config["pretrained_model_path"])
+
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
