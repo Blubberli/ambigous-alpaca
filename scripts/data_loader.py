@@ -210,6 +210,7 @@ class PhraseAndContextDatasetStatic(SimplePhraseDataset):
         return [{"w1": word1_embeddings[i],
                                 "w2" : word2_embeddings[i],
                                 "seq":sequences[i],
+                                "seq_lengths": sequence_lengths[i],
                                 "l": self.labels[i]} for i in range(len(self.labels))]
         #return [SimpleNamespace(word1_embs = word1_embeddings[i],
          #                   word2_embs= word2_embeddings[i],
@@ -292,8 +293,15 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
 
         sequence_lengths = np.array([len(words) for words in self.sentences])
 
-        return [[word1_embeddings[i], word2_embeddings[i], sequences[i], sequence_lengths[i], self.labels[i]] for i in
-                range(len(self.labels))]
+        return [{"w1": word1_embeddings[i],
+                                "w2" : word2_embeddings[i],
+                                "seq":sequences[i],
+                                "seq_lengths": sequence_lengths[i],
+                                "l": self.labels[i]} for i in range(len(self.labels))]
+
+
+        #return [[word1_embeddings[i], word2_embeddings[i], sequences[i], sequence_lengths[i], self.labels[i]] for i in
+         #       range(len(self.labels))]
 
     @property
     def feature_extractor(self):
