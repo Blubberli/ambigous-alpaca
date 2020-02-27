@@ -29,6 +29,8 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
         self.w2 = torch.from_numpy(np.array([[0.5, 0.3, 0.7, 0.1], [0.1, 0.5, 0.6, 0.1]], dtype=np.float32))
         self.label = torch.from_numpy(np.array([[1.0], [0.0]], dtype=np.float32))
         self.label_multi = torch.from_numpy(np.array([3, 1]))
+        self.batch_bin = {"w1": self.w1, "w2": self.w2, "l": self.label}
+        self.batch_multi = {"w1": self.w1, "w2": self.w2, "l": self.label_multi}
 
     def test_model_binary(self):
         """
@@ -36,7 +38,7 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
         larger than zero and not NaN
         """
         self.optimizer_binary.zero_grad()
-        output = self.model_binary(self.w1, self.w2, True)
+        output = self.model_binary(self.batch_bin, True)
         loss = binary_class_cross_entropy(output, self.label).item()
         np.testing.assert_equal(math.isnan(loss), False)
         np.testing.assert_equal(loss >= 0, True)
@@ -47,7 +49,7 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
         a number larger than zero and not NaN
         """
         self.optimizer_multi.zero_grad()
-        output = self.model_multiclass(self.w1, self.w2, True)
+        output = self.model_multiclass(self.batch_multi, True)
         loss = multi_class_cross_entropy(output, self.label_multi).item()
         np.testing.assert_equal(math.isnan(loss), False)
         np.testing.assert_equal(loss >= 0, True)
@@ -75,7 +77,7 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
 
         for epoch in range(0, 10):
             self.optimizer_binary.zero_grad()
-            output = self.model_binary(self.w1, self.w2, True)
+            output = self.model_binary(self.batch_bin, True)
             loss = binary_class_cross_entropy(output, self.label)
             loss.backward()
             self.optimizer_binary.step()
@@ -93,15 +95,15 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
         expected_shape_binary = np.array([2, 1])
         expected_shape_multi = np.array([2, 4])
         expected_shape_composed_phrase = np.array([2, 4])
-        output_binary = self.model_binary(self.w1, self.w2, True)
+        output_binary = self.model_binary(self.batch_bin, True)
         composed_phrase = self.model_binary.composed_phrase
-        output_multi = self.model_multiclass(self.w1, self.w2, True)
+        output_multi = self.model_multiclass(self.batch_multi, True)
         np.testing.assert_almost_equal(output_binary.shape, expected_shape_binary)
         np.testing.assert_almost_equal(output_multi.shape, expected_shape_multi)
         np.testing.assert_almost_equal(composed_phrase.shape, expected_shape_composed_phrase)
 
     def test_embedding_normalization(self):
         """Test whether the composed phrase has been normalized to unit norm"""
-        self.model_binary(self.w1, self.w2, True)
+        self.model_binary(self.batch_bin, True)
         composed_phrase = self.model_binary.composed_phrase
         np.testing.assert_almost_equal(np.linalg.norm(composed_phrase[0].data), 1)

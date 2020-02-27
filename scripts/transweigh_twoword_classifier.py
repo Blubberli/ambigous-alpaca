@@ -34,7 +34,7 @@ class TransweighTwoWordClassifier(nn.Module):
         self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
 
-    def forward(self, word1, word2, training):
+    def forward(self, batch, training):
         """
         First composes the input vectors into one representation. This is then feed trough a hidden layer with a Relu and
         finally trough an output layer that returns weights for each class.
@@ -43,7 +43,7 @@ class TransweighTwoWordClassifier(nn.Module):
         :param training: training: True if the model should be trained, False if the model is in inference
         :return: the raw weights for each class
         """
-        self._composed_phrase = self.compose(word1, word2, training)
+        self._composed_phrase = self.compose(batch["w1"], batch["w2"], training)
         hidden = F.relu(self.hidden(self.composed_phrase))
         hidden = F.dropout(hidden, training=training, p=self.dropout_rate)
         class_weights = self.output(hidden)
