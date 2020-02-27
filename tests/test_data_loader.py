@@ -21,6 +21,7 @@ class DataLoaderTest(unittest.TestCase):
                                                                          False, 20)
         self._static_dataset = SimplePhraseStaticDataset(self._data_path, self._embedding_path)
 
+
     def test_exception(self):
         """ Trying to initialize the abstract Dataset should throw a Type Exception """
         self.assertRaises(TypeError, lambda: SimplePhraseDataset(self._data_path))
