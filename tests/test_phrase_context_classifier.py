@@ -35,10 +35,11 @@ class PhraseContextClassifierTest(unittest.TestCase):
                                  batch_size=64,
                                  shuffle=True,
                                  num_workers=0)
-        for word1, word2, context, context_len, labels in data_loader:
+
+        for batch in data_loader:
             # context is a list of list of word embeddings
-            out = self.model(word1, word2, context, context_len, True).squeeze()
-            loss = multi_class_cross_entropy(out, labels)
+            out = self.model(batch, True, "cpu").squeeze()
+            loss = multi_class_cross_entropy(out, batch["l"])
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -46,4 +47,3 @@ class PhraseContextClassifierTest(unittest.TestCase):
         loss = loss.data.numpy()
         np.testing.assert_equal(math.isnan(loss), False)
         np.testing.assert_equal(loss >= 0, True)
-
