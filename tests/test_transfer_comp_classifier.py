@@ -4,7 +4,8 @@ from torch import optim
 import torch
 import pathlib
 import numpy as np
-
+from scripts import SimplePhraseContextualizedDataset
+from torch.utils.data import DataLoader
 
 class TransferCompClassifierTest(unittest.TestCase):
     """
@@ -25,10 +26,11 @@ class TransferCompClassifierTest(unittest.TestCase):
         self.variables = ["_transformation_tensor", "_transformation_bias", "_combining_tensor", "_combining_bias",
                           "_hidden.weight", "_hidden.bias", "_output.weight", "_output.bias"]
 
-        self.optimizer_binary = optim.Adam(self.model.parameters(), lr=0.1)
-        self.word1 = torch.from_numpy(np.array([[0.9, 0.5, 1.5, 1.0], [0.1, 0.5, 0.1, 1.0]], dtype=np.float32))
-        self.word2 = torch.from_numpy(np.array([[0.5, 0.3, 0.7, 0.1], [0.1, 0.5, 0.6, 0.1]], dtype=np.float32))
-        self.label = torch.from_numpy(np.array([[1.0], [0.0]], dtype=np.float32))
+        self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/test.txt")
+        self._contextualized_dataset = SimplePhraseContextualizedDataset(self._data_path, 'bert-base-german-cased', 20,
+                                                                         False, 20)
+        self._data = DataLoader(self._contextualized_dataset , batch_size=2)
+        self._batch = next(iter(self._data))
 
     @staticmethod
     def access_named_parameter(model, parameter_name):
@@ -49,7 +51,6 @@ class TransferCompClassifierTest(unittest.TestCase):
         model_transformation_bias = self._pretrained_model["_transformation_bias"]
         model_combination_tensor = self._pretrained_model["_combining_tensor"]
         model_combination_bias = self._pretrained_model["_combining_bias"]
-
         np.testing.assert_equal((torch.sum(self.access_named_parameter(self.model,
                                                                        "_transformation_tensor") -
                                            model_transformation_tensor).item()) == 0.0,
