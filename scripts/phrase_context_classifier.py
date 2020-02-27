@@ -34,6 +34,7 @@ class PhraseContextClassifier(nn.Module):
         # convert the padded context into a packed sequence such that the padded vectors are not shown to the LSTM
         # context_packed = sum of all seq lenghts, embedding_dim
         # batch_sizes = column-wise (how many real elements do I have?)
+        assert("seq" in batch.keys() and "seq_lengths" in batch.keys()), "no sequence and sequence length in batch"
         context_packed = nn.utils.rnn.pack_padded_sequence(batch["seq"], batch["seq_lengths"], batch_first=True,
                                                            enforce_sorted=False)
         self.lstm.to(device)
