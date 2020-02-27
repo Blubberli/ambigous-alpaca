@@ -22,27 +22,27 @@ class PhraseAndContextDatasetsTest(unittest.TestCase):
                                   batch_size=10,
                                   shuffle=True,
                                   num_workers=0)
-        for w1, w2, sequence, sequence_lengths, label in train_loader:
-            max_len = sequence.shape[1]
+        for batch in train_loader:
+            max_len = batch["seq"].shape[1]
             # shape of sequence has three dimensions: batchsize, max_seq_len, embedding_dim
-            np.testing.assert_equal(len(sequence.shape), 3)
-            np.testing.assert_equal(w1.shape[0], w2.shape[0])
-            np.testing.assert_equal(w1.shape[0], sequence.shape[0])
-            np.testing.assert_equal(sequence_lengths.shape[0], label.shape[0])
-            max_val = max(sequence_lengths).data.numpy()
+            np.testing.assert_equal(len(batch["seq"].shape), 3)
+            np.testing.assert_equal(batch["w1"].shape[0], batch["w2"].shape[0])
+            np.testing.assert_equal(batch["w1"].shape[0], batch["seq"].shape[0])
+            np.testing.assert_equal(batch["seq_lengths"].shape[0], batch["l"].shape[0])
+            max_val = max(batch["seq_lengths"]).data.numpy()
             np.testing.assert_equal(max_len >= max_val, True)
         train_loader = DataLoader(self.bert_set,
                                   batch_size=10,
                                   shuffle=True,
                                   num_workers=0)
-        for w1, w2, sequence, sequence_lengths, label in train_loader:
-            max_len = sequence.shape[1]
+        for batch in train_loader:
+            max_len = batch["seq"].shape[1]
             # shape of sequence has three dimensions: batchsize, max_seq_len, embedding_dim
-            np.testing.assert_equal(len(sequence.shape), 3)
-            np.testing.assert_equal(w1.shape[0], w2.shape[0])
-            np.testing.assert_equal(w1.shape[0], sequence.shape[0])
-            np.testing.assert_equal(sequence_lengths.shape[0], label.shape[0])
-            max_val = max(sequence_lengths).data.numpy()
+            np.testing.assert_equal(len(batch["seq"].shape), 3)
+            np.testing.assert_equal(batch["w1"].shape[0], batch["w2"].shape[0])
+            np.testing.assert_equal(batch["w1"].shape[0], batch["seq"].shape[0])
+            np.testing.assert_equal(batch["seq_lengths"].shape[0], batch["l"].shape[0])
+            max_val = max(batch["seq_lengths"]).data.numpy()
             np.testing.assert_equal(max_len >= max_val, True)
 
     def test_padding(self):
@@ -50,12 +50,12 @@ class PhraseAndContextDatasetsTest(unittest.TestCase):
                                   batch_size=10,
                                   shuffle=True,
                                   num_workers=0)
-        for w1, w2, sequence, sequence_lengths, label in train_loader:
-            max_len = sequence.shape[1]
-            max_val = max(sequence_lengths).data.numpy()
+        for batch in train_loader:
+            max_len = batch["seq"].shape[1]
+            max_val = max(batch["seq_lengths"]).data.numpy()
             if max_len != max_val:
-                padded_vec = sequence[0]
-                real_len = sequence_lengths[0].data.numpy()
+                padded_vec = batch["seq"][0]
+                real_len = batch["seq_lengths"][0].data.numpy()
                 non_padded = np.count_nonzero(padded_vec, axis=0)[0]
                 np.testing.assert_equal(real_len, non_padded)
                 np.testing.assert_array_almost_equal(padded_vec[max_len-1], np.zeros(shape=[300]))
@@ -63,12 +63,12 @@ class PhraseAndContextDatasetsTest(unittest.TestCase):
                                   batch_size=10,
                                   shuffle=True,
                                   num_workers=0)
-        for w1, w2, sequence, sequence_lengths, label in train_loader:
-            max_len = sequence.shape[1]
-            max_val = max(sequence_lengths).data.numpy()
+        for batch in train_loader:
+            max_len = batch["seq"].shape[1]
+            max_val = max(batch["seq_lengths"]).data.numpy()
             if max_len != max_val:
-                padded_vec = sequence[0]
-                real_len = sequence_lengths[0].data.numpy()
+                padded_vec = batch["seq"][0]
+                real_len = batch["seq_lengths"][0].data.numpy()
                 non_padded = np.count_nonzero(padded_vec, axis=0)[0]
                 np.testing.assert_equal(real_len, non_padded)
                 np.testing.assert_array_almost_equal(padded_vec[max_len - 1], np.zeros(shape=[768]))
