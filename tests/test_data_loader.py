@@ -21,6 +21,7 @@ class DataLoaderTest(unittest.TestCase):
                                                                          False, 20)
         self._static_dataset = SimplePhraseStaticDataset(self._data_path, self._embedding_path)
 
+
     def test_exception(self):
         """ Trying to initialize the abstract Dataset should throw a Type Exception """
         self.assertRaises(TypeError, lambda: SimplePhraseDataset(self._data_path))
@@ -30,15 +31,17 @@ class DataLoaderTest(unittest.TestCase):
         labels have the shape (batchsize)
         """
         dataloader = DataLoader(self._contextualized_dataset, batch_size=5, shuffle=True, num_workers=2)
-        w1, w2, l = next(iter(dataloader))
-        np.testing.assert_equal(np.array(w1.shape), [5, 768])
-        np.testing.assert_equal(np.array(w2.shape), [5, 768])
-        np.testing.assert_equal(np.array(l.shape), [5])
+
+        data = next(iter(dataloader))
+
+        np.testing.assert_equal(np.array(data["w1"].shape), [5, 768])
+        np.testing.assert_equal(np.array(data["w2"].shape), [5, 768])
+        np.testing.assert_equal(np.array(data["l"].shape), [5])
         dataloader = DataLoader(self._static_dataset, batch_size=5, shuffle=True, num_workers=2)
-        w1, w2, l = next(iter(dataloader))
-        np.testing.assert_equal(np.array(w1.shape), [5, 300])
-        np.testing.assert_equal(np.array(w2.shape), [5, 300])
-        np.testing.assert_equal(np.array(l.shape), [5])
+        data = next(iter(dataloader))
+        np.testing.assert_equal(np.array(data["w1"].shape), [5, 300])
+        np.testing.assert_equal(np.array(data["w2"].shape), [5, 300])
+        np.testing.assert_equal(np.array(data["l"].shape), [5])
 
     def test_labels(self):
         """Test whether the label dictionary contains 3 different labels for the multiclass classification dataset"""

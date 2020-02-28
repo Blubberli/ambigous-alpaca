@@ -39,21 +39,22 @@ def train_binary(config, train_loader, valid_loader, model_path):
         valid_losses = []
         valid_accuracies = []
 
-        for word1, word2, labels in train_loader:
-            out = model(word1, word2, True).squeeze()
-            loss = binary_class_cross_entropy(out, labels.float())
+        #for word1, word2, labels in train_loader:
+        for batch in train_loader:
+            out = model(batch, True).squeeze()
+            loss = binary_class_cross_entropy(out, batch["l"].float())
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             train_losses.append(loss.item())
         # validation loop over validation batches
         model.eval()
-        for word1, word2, labels in valid_loader:
-            out = model(word1, word2, False).squeeze()
+        for batch in valid_loader:
+            out = model(batch, False).squeeze()
             predictions = convert_logits_to_binary_predictions(out)
-            loss = binary_class_cross_entropy(out, labels.float())
+            loss = binary_class_cross_entropy(out, batch["l"].float())
             valid_losses.append(loss.item())
-            _, accur = get_accuracy(predictions, labels)
+            _, accur = get_accuracy(predictions, batch["l"])
             valid_accuracies.append(accur)
 
         # calculate average loss and accuracy over an epoch
@@ -108,21 +109,21 @@ def train_multiclass(config, train_loader, valid_loader, model_path):
         train_losses = []
         valid_losses = []
         valid_accuracies = []
-        for word1, word2, labels in train_loader:
-            out = model(word1, word2, True)
-            loss = multi_class_cross_entropy(out, labels)
+        for batch in train_loader:
+            out = model(batch, True)
+            loss = multi_class_cross_entropy(out, batch["l"])
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             train_losses.append(loss.item())
 
         model.eval()
-        for word1, word2, labels in valid_loader:
-            out = model(word1, word2, False)
+        for batch in valid_loader:
+            out = model(batch, False)
             _, predictions = torch.max(out, 1)
-            loss = multi_class_cross_entropy(out, labels)
+            loss = multi_class_cross_entropy(out, batch["l"])
             valid_losses.append(loss.item())
-            _, accur = get_accuracy(predictions.tolist(), labels)
+            _, accur = get_accuracy(predictions.tolist(), batch["l"])
             valid_accuracies.append(accur)
 
         # calculate average loss and accuracy over an epoch
@@ -161,16 +162,16 @@ def predict(test_loader, model, config):  # for test set
     test_loss = []
     predictions = []
     accuracy = []
-    for word1, word2, labels in test_loader:
-        out = model(word1, word2, False)
+    for batch in test_loader:
+        out = model(batch, False)
         if config["model"]["classification"] == "multi":
-            test_loss.append(multi_class_cross_entropy(out, labels).item())
+            test_loss.append(multi_class_cross_entropy(out, batch["l"]).item())
             _, prediction = torch.max(out, 1)
             prediction = prediction.tolist()
         else:  # binary
-            test_loss.append(binary_class_cross_entropy(out.squeeze(), labels.float()).item())
+            test_loss.append(binary_class_cross_entropy(out.squeeze(), batch["l"].float()).item())
             prediction = convert_logits_to_binary_predictions(out)
-        _, accur = get_accuracy(prediction, labels)
+        _, accur = get_accuracy(prediction, batch["l"])
         predictions.append(prediction)
         accuracy.append(accur)
     predictions = [item for sublist in predictions for item in sublist]  # flatten list
