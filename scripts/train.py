@@ -272,7 +272,7 @@ if __name__ == "__main__":
     valid_model = init_classifier(config)
     valid_model.load_state_dict(torch.load(model_path))
     valid_model.eval()
-    if model:
+    if valid_model:
         logger.info("generating predictions for validation data...")
         valid_predictions, validation_loss, valid_acc = predict(valid_loader, valid_model, config, device)
         save_predictions(valid_predictions, prediction_path_dev)
