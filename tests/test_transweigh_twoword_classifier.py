@@ -29,8 +29,8 @@ class TransweighTwoWordClassifierTest(unittest.TestCase):
         self.w2 = torch.from_numpy(np.array([[0.5, 0.3, 0.7, 0.1], [0.1, 0.5, 0.6, 0.1]], dtype=np.float32))
         self.label = torch.from_numpy(np.array([[1.0], [0.0]], dtype=np.float32))
         self.label_multi = torch.from_numpy(np.array([3, 1]))
-        self.batch_bin = {"w1": self.w1, "w2": self.w2, "l": self.label}
-        self.batch_multi = {"w1": self.w1, "w2": self.w2, "l": self.label_multi}
+        self.batch_bin = {"w1": self.w1, "w2": self.w2, "l": self.label, "device": "cpu"}
+        self.batch_multi = {"w1": self.w1, "w2": self.w2, "l": self.label_multi, "device": "cpu"}
 
     def test_model_binary(self):
         """

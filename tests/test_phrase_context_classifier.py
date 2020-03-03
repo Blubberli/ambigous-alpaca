@@ -38,7 +38,8 @@ class PhraseContextClassifierTest(unittest.TestCase):
 
         for batch in data_loader:
             # context is a list of list of word embeddings
-            out = self.model(batch, True, "cpu").squeeze()
+            batch["device"] = "cpu"
+            out = self.model(batch, True).squeeze()
             loss = multi_class_cross_entropy(out, batch["l"])
             loss.backward()
             self.optimizer.step()

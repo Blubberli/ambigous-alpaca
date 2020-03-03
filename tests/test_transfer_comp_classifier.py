@@ -1,11 +1,11 @@
 import unittest
 from scripts import TransferCompClassifier
-from torch import optim
 import torch
 import pathlib
 import numpy as np
 from scripts import SimplePhraseContextualizedDataset
 from torch.utils.data import DataLoader
+
 
 class TransferCompClassifierTest(unittest.TestCase):
     """
@@ -29,7 +29,7 @@ class TransferCompClassifierTest(unittest.TestCase):
         self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/test.txt")
         self._contextualized_dataset = SimplePhraseContextualizedDataset(self._data_path, 'bert-base-german-cased', 20,
                                                                          False, 20)
-        self._data = DataLoader(self._contextualized_dataset , batch_size=2)
+        self._data = DataLoader(self._contextualized_dataset, batch_size=2)
         self._batch = next(iter(self._data))
 
     @staticmethod
