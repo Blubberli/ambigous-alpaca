@@ -29,12 +29,13 @@ class PhraseContextClassifier(nn.Module):
         self._hidden_layer = nn.Linear(2 * embedding_dim + hidden_size * 2, forward_hidden_dim)
         self._output_layer = nn.Linear(forward_hidden_dim, label_nr)
 
-    def forward(self, batch, training, device):
+    def forward(self, batch, training):
         # context size = batchsize x max len x embedding dim
         # convert the padded context into a packed sequence such that the padded vectors are not shown to the LSTM
         # context_packed = sum of all seq lenghts, embedding_dim
         # batch_sizes = column-wise (how many real elements do I have?)
-        context_packed = nn.utils.rnn.pack_padded_sequence(batch["seq"], batch["seq_lengths"], batch_first=True,
+        device = batch["device"]
+        context_packed = nn.utils.rnn.pack_padded_sequence(batch["seq"].to(device), batch["seq_lengths"].to(device), batch_first=True,
                                                            enforce_sorted=False)
         self.lstm.to(device)
         # forward propagate LSTM, initial states are set to 0 per default
@@ -49,7 +50,7 @@ class PhraseContextClassifier(nn.Module):
         out = out[:, -1, :]
 
         # concat the word vectors into phrase
-        word_composed = comp_functions.concat(batch["w1"], batch["w2"], axis=1)
+        word_composed = comp_functions.concat(batch["w1"].to(device), batch["w2"].to(device), axis=1)
 
         # concate phrase with encoded sequence and send through forward
         context_phrase = torch.cat((word_composed, out), 1)

@@ -7,7 +7,6 @@ from torch import nn
 import somajo
 import numpy as np
 from scripts import BertExtractor, StaticEmbeddingExtractor
-from types import SimpleNamespace
 
 
 class SimplePhraseDataset(ABC, Dataset):
@@ -108,7 +107,8 @@ class SimplePhraseContextualizedDataset(SimplePhraseDataset):
     def populate_samples(self):
         word1_embeddings = self.lookup_embedding(self.word1)
         word2_embeddings = self.lookup_embedding(self.word2)
-        return [{"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": self.labels[i]} for i in range(len(self.labels))]
+        return [{"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": self.labels[i]} for i in
+                range(len(self.labels))]
 
     @property
     def feature_extractor(self):
@@ -147,12 +147,8 @@ class SimplePhraseStaticDataset(SimplePhraseDataset):
         word1_embeddings = self.lookup_embedding(self.word1)
         word2_embeddings = self.lookup_embedding(self.word2)
 
-        return [{"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": self.labels[i]} for i in range(len(self.labels))]
-
-        #return [SimpleNamespace(word1_embs=word1_embeddings[i],
-         #                       word2_embs=word2_embeddings[i],
-          #                      labs=self.labels[i]) for i in range(len(self.labels))]
-        #return [[word1_embeddings[i], word2_embeddings[i], self.labels[i]] for i in range(len(self.labels))]
+        return [{"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": self.labels[i]} for i in
+                range(len(self.labels))]
 
     @property
     def feature_extractor(self):
@@ -193,7 +189,8 @@ class PhraseAndContextDatasetStatic(SimplePhraseDataset):
     def populate_samples(self):
         """
         Looks up the embedding for each word in the phrase. For each sentence it looks up the word embeddings an creates
-        a tensor with the corresponding word embeddings. This tensor is then padded to the length of the longest sentence
+        a tensor with the corresponding word embeddings. This tensor is then padded to the length of the longest
+        sentence
         in the dataset. So the tensor for each sentence contains the same number of word embeddings, padded with
         zero embeddings at the end.
         """
@@ -206,19 +203,11 @@ class PhraseAndContextDatasetStatic(SimplePhraseDataset):
         sequences = nn.utils.rnn.pad_sequence(batch_first=True, sequences=sequences, padding_value=0.0)
 
         sequence_lengths = np.array([len(words) for words in self.sentences])
-        list_of_namespaces = []
         return [{"w1": word1_embeddings[i],
-                                "w2" : word2_embeddings[i],
-                                "seq":sequences[i],
-                                "seq_lengths": sequence_lengths[i],
-                                "l": self.labels[i]} for i in range(len(self.labels))]
-        #return [SimpleNamespace(word1_embs = word1_embeddings[i],
-         #                   word2_embs= word2_embeddings[i],
-          #                  seqs = sequences[i],
-           #                 labs = self.labels[i]) for i in range(len(self.labels))]
-
-        #return [[word1_embeddings[i], word2_embeddings[i], sequences[i], sequence_lengths[i], self.labels[i]] for i in
-                #range(len(self.labels))]
+                 "w2": word2_embeddings[i],
+                 "seq": sequences[i],
+                 "seq_lengths": sequence_lengths[i],
+                 "l": self.labels[i]} for i in range(len(self.labels))]
 
     @property
     def feature_extractor(self):
@@ -275,7 +264,8 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
     def populate_samples(self):
         """
         Looks up the embedding for each word in the phrase. For each sentence it looks up the word embeddings an creates
-        a tensor with the corresponding word embeddings. This tensor is then padded to the length of the longest sentence
+        a tensor with the corresponding word embeddings. This tensor is then padded to the length of the longest
+        sentence
         in the dataset. So the tensor for each sentence contains the same number of word embeddings, padded with
         zero embeddings at the end.
         """
@@ -294,14 +284,10 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
         sequence_lengths = np.array([len(words) for words in self.sentences])
 
         return [{"w1": word1_embeddings[i],
-                                "w2" : word2_embeddings[i],
-                                "seq":sequences[i],
-                                "seq_lengths": sequence_lengths[i],
-                                "l": self.labels[i]} for i in range(len(self.labels))]
-
-
-        #return [[word1_embeddings[i], word2_embeddings[i], sequences[i], sequence_lengths[i], self.labels[i]] for i in
-         #       range(len(self.labels))]
+                 "w2": word2_embeddings[i],
+                 "seq": sequences[i],
+                 "seq_lengths": sequence_lengths[i],
+                 "l": self.labels[i]} for i in range(len(self.labels))]
 
     @property
     def feature_extractor(self):

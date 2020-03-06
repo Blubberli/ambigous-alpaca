@@ -39,8 +39,8 @@ class TransferCompClassifier(nn.Module):
         :param training: training: True if the model should be trained, False if the model is in inference
         :return: the raw weights for each class
         """
-
-        self._composed_phrase = self.compose(batch["w1"], batch["w2"], training)
+        device = batch["device"]
+        self._composed_phrase = self.compose(batch["w1"].to(device), batch["w2"].to(device), training)
         hidden = F.relu(self.hidden(self.composed_phrase))
         hidden = F.dropout(hidden, training=training, p=self.dropout_rate)
         class_weights = self.output(hidden)
