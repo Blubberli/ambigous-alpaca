@@ -51,7 +51,6 @@ class TransferCompClassifier(nn.Module):
                                      transformation_bias=self.transformation_bias, combining_bias=self.combining_bias,
                                      combining_tensor=self.combining_tensor, dropout_rate=self.dropout_rate,
                                      training=training)
-        print(training)
         if self.normalize_embeddings:
             composed_phrase = F.normalize(composed_phrase, p=2, dim=1)
         return composed_phrase
