@@ -18,7 +18,7 @@ class BasicTwoWordClassifier(nn.Module):
         self._output_layer = nn.Linear(hidden_dim, label_nr)
         self._dropout_rate = dropout_rate
 
-    def forward(self, batch, training=True):
+    def forward(self, batch):
         """
         this function takes two words, concatenates them and applies a non-linear matrix transformation (hidden layer)
         Its output is then fed to an output layer. Then it returns the concatenated and transformed vectors.
@@ -29,7 +29,7 @@ class BasicTwoWordClassifier(nn.Module):
         device = batch["device"]
         word_composed = comp_functions.concat(batch["w1"].to(device), batch["w2"].to(device), axis=1)
         x = F.relu(self.hidden_layer(word_composed))
-        x = F.dropout(x, training=training, p=self.dropout_rate)
+        x = F.dropout(x, p=self.dropout_rate)
         return self.output_layer(x)
 
     @property

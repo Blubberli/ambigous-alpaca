@@ -44,7 +44,7 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         # for word1, word2, labels in train_loader:
         for batch in train_loader:
             batch["device"] = device
-            out = model(batch, True).squeeze().to("cpu")
+            out = model(batch).squeeze().to("cpu")
             loss = binary_class_cross_entropy(out, batch["l"].float())
             loss.backward()
             optimizer.step()
@@ -54,7 +54,7 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         model.eval()
         for batch in valid_loader:
             batch["device"] = device
-            out = model(batch, False).squeeze().to("cpu")
+            out = model(batch).squeeze().to("cpu")
             predictions = convert_logits_to_binary_predictions(out)
             loss = binary_class_cross_entropy(out, batch["l"].float())
             valid_losses.append(loss.item())
@@ -114,7 +114,7 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
         valid_accuracies = []
         for batch in train_loader:
             batch["device"] = device
-            out = model(batch, True).to("cpu")
+            out = model(batch).to("cpu")
             loss = multi_class_cross_entropy(out, batch["l"])
             loss.backward()
             optimizer.step()
@@ -124,7 +124,7 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
         model.eval()
         for batch in valid_loader:
             batch["device"] = device
-            out = model(batch, False).to("cpu")
+            out = model(batch).to("cpu")
             _, predictions = torch.max(out, 1)
             loss = multi_class_cross_entropy(out, batch["l"])
             valid_losses.append(loss.item())
@@ -168,8 +168,9 @@ def predict(test_loader, model, config, device):  # for test set
     accuracy = []
     for batch in test_loader:
         batch["device"] = device
-        out = model(batch, False).to("cpu")
+        out = model(batch).to("cpu")
         if config["model"]["classification"] == "multi":
+
             test_loss.append(multi_class_cross_entropy(out, batch["l"]).item())
             _, prediction = torch.max(out, 1)
             prediction = prediction.tolist()
