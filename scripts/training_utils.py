@@ -1,11 +1,10 @@
 import torch
 
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, PhraseContextClassifier
-
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier
+from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
+    PhraseContextClassifier, TransweighPretrain
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
-    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
+    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
 
 
 def init_classifier(config):
@@ -43,6 +42,11 @@ def init_classifier(config):
                                             label_nr=config["model"]["label_size"],
                                             normalize_embeddings=config["model"]["normalize_embeddings"],
                                             pretrained_model=config["pretrained_model_path"])
+    if config["model"]["type"] == "transweigh_pretrain":
+        classifier = TransweighPretrain(input_dim=config["model"]["input_dim"],
+                                        dropout_rate=config["model"]["dropout"],
+                                        normalize_embeddings=config["model"]["normalize_embeddings"],
+                                        transformations=config["model"]["transformations"])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
@@ -63,6 +67,7 @@ def get_datasets(config):
         lower_case = bert_parameter["lower_case"]
         batch_size = bert_parameter["batch_size"]
         if config["feature_extractor"]["context"] is False:
+
             # phrase only
             dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
                                                               bert_model=bert_model,
@@ -97,15 +102,29 @@ def get_datasets(config):
     else:
         # phrase only
         if config["feature_extractor"]["context"] is False:
-            dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
-                                                      embedding_path=config["feature_extractor"]["static"][
-                                                          "pretrained_model"])
-            dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
-                                                     embedding_path=config["feature_extractor"]["static"][
-                                                         "pretrained_model"])
-            dataset_valid = SimplePhraseStaticDataset(data_path=config["validation_data_path"],
-                                                      embedding_path=config["feature_extractor"]["static"][
-                                                          "pretrained_model"])
+            if config["model"]["type"] == "transweigh_pretrain":
+                dataset_train = PretrainCompmodelDataset(data_path=config["train_data_path"],
+                                                         embedding_path=config["feature_extractor"]["static"][
+                                                             "pretrained_model"]
+                                                         )
+                dataset_test = PretrainCompmodelDataset(data_path=config["test_data_path"],
+                                                        embedding_path=config["feature_extractor"]["static"][
+                                                            "pretrained_model"]
+                                                        )
+                dataset_valid = PretrainCompmodelDataset(data_path=config["validation_data_path"],
+                                                         embedding_path=config["feature_extractor"]["static"][
+                                                             "pretrained_model"]
+                                                         )
+            else:
+                dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
+                                                          embedding_path=config["feature_extractor"]["static"][
+                                                              "pretrained_model"])
+                dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
+                                                         embedding_path=config["feature_extractor"]["static"][
+                                                             "pretrained_model"])
+                dataset_valid = SimplePhraseStaticDataset(data_path=config["validation_data_path"],
+                                                          embedding_path=config["feature_extractor"]["static"][
+                                                              "pretrained_model"])
         else:
             # phrase and sentence
             dataset_train = PhraseAndContextDatasetStatic(data_path=config["train_data_path"],
