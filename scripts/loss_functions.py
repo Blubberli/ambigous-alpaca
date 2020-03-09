@@ -26,3 +26,22 @@ def binary_class_cross_entropy(output, target):
     assert output.shape == target.shape, "target shape is same as output shape"
     loss = F.binary_cross_entropy(torch.sigmoid(output), target)
     return loss
+
+
+def get_loss_cosine_distance(original_phrase, composed_phrase, dim=1, normalize=False):
+    """
+    Computes the cosine distance between two given phrases. The distance can be used to pretrain a composition model.
+    :param original_phrase: the gold standard representations
+    :param composed_phrase: the representations retrieved from the composition model
+    :param dim: along which dimension to compute the distance and to normalize, default=1 for two batches
+    :param normalize: Whether the input embeddings should be normalized, the function expects the input to already be
+    normalized
+    :return: The averaged cosine distance for one batch
+    """
+    assert original_phrase.shape == composed_phrase.shape, "shapes of original and composed phrase have to be the same"
+    if normalize:
+        original_phrase = F.normalize(original_phrase, p=2, dim=dim)
+        composed_phrase = F.normalize(original_phrase, p=2, dim=dim)
+    cosine_distances = 1 - F.cosine_similarity(original_phrase, composed_phrase, dim)
+    total = torch.sum(cosine_distances)
+    return total / original_phrase.shape[0]

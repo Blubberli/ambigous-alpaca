@@ -14,4 +14,5 @@ from scripts.data_loader import SimplePhraseStaticDataset, SimplePhraseContextua
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset
 from scripts.phrase_context_classifier import PhraseContextClassifier
+from scripts.transweigh_pretrain import TransweighPretrain
 
