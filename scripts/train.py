@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 from torch import optim
 import numpy as np
+from sklearn.metrics import f1_score
 import logging.config
 from scripts.logger_config import create_config
 from torch.utils.data import DataLoader
@@ -22,16 +23,15 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
     """
     model = init_classifier(config)
     model.to(device)
-    optimizer = optim.Adam(model.parameters(),
-                           lr=config["trainer"]["optimizer"]["lr"])  # or make an if statement for choosing an optimizer
+    optimizer = optim.Adam(model.parameters())  # or make an if statement for choosing an optimizer
     current_patience = 0
     tolerance = 1e-5
     lowest_loss = float("inf")
     best_epoch = 1
     epoch = 1
     train_loss = 0.0
-    valid_loss = 0.0
     best_accuracy = 0.0
+    best_f1 = 0.0
 
     for epoch in range(1, config["num_epochs"] + 1):
         # training loop over all batches
@@ -40,6 +40,8 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         train_losses = []
         valid_losses = []
         valid_accuracies = []
+        valid_f1_scores = []
+        early_stopping_criterion = config["validation_metric"]
 
         # for word1, word2, labels in train_loader:
         for batch in train_loader:
@@ -59,30 +61,49 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
             loss = binary_class_cross_entropy(out, batch["l"].float())
             valid_losses.append(loss.item())
             _, accur = get_accuracy(predictions, batch["l"])
+            f1 = f1_score(y_true=batch["l"], y_pred=predictions)
             valid_accuracies.append(accur)
+            valid_f1_scores.append(f1)
 
         # calculate average loss and accuracy over an epoch
         train_loss = np.average(train_losses)
         valid_loss = np.average(valid_losses)
         valid_accuracy = np.average(valid_accuracies)
-
-        if lowest_loss - valid_loss > tolerance:
-            lowest_loss = valid_loss
-            best_epoch = epoch
-            best_accuracy = valid_accuracy
-            current_patience = 0
-            torch.save(model.state_dict(), model_path)
+        valid_f1 = np.average(valid_f1_scores)
+        # stop when f1 score is the highest
+        if early_stopping_criterion == "f1":
+            if valid_f1 > best_f1 - tolerance:
+                lowest_loss = valid_loss
+                best_f1 = valid_f1
+                best_epoch = epoch
+                best_accuracy = valid_accuracy
+                current_patience = 0
+                torch.save(model.state_dict(), model_path)
+            else:
+                current_patience += 1
+        # stop when loss is the lowest
         else:
-            current_patience += 1
+            if lowest_loss - valid_loss > tolerance:
+                lowest_loss = valid_loss
+                best_epoch = epoch
+                best_accuracy = valid_accuracy
+                best_f1 = valid_f1
+                current_patience = 0
+                torch.save(model.state_dict(), model_path)
+
+            else:
+                current_patience += 1
         if current_patience > config["patience"]:
             break
 
-        logger.info("current patience: %d , epoch %d , train loss: %.5f, validation loss: %.5f, accuracy: %.5f " %
-                    (current_patience, epoch, train_loss, valid_loss, valid_accuracy))
+        logger.info(
+            "current patience: %d , epoch %d , train loss: %.5f, validation loss: %.5f, accuracy: %.5f, f1 score: %5f" %
+            (current_patience, epoch, train_loss, valid_loss, valid_accuracy, valid_f1))
     logger.info(
         "training finnished after %d epochs, train loss: %.5f, best epoch : %d , best validation loss: %.5f, "
+        "best f1 score: %5f"
         "best validation accuracy: %.5f " %
-        (epoch, train_loss, best_epoch, lowest_loss, best_accuracy))
+        (epoch, train_loss, best_epoch, lowest_loss, best_accuracy, best_f1))
 
 
 def train_multiclass(config, train_loader, valid_loader, model_path, device):
@@ -95,8 +116,7 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
     """
     model = init_classifier(config)
     model.to(device)
-    optimizer = optim.Adam(model.parameters(),
-                           lr=config["trainer"]["optimizer"]["lr"])  # or make an if statement for choosing an optimizer
+    optimizer = optim.Adam(model.parameters())  # or make an if statement for choosing an optimizer
     current_patience = 0
     tolerance = 1e-5
     lowest_loss = float("inf")
@@ -104,7 +124,8 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
     epoch = 1
     train_loss = 0.0
     best_accuracy = 0.0
-
+    best_f1 = 0.0
+    early_stopping_criterion = config["validation_metric"]
     for epoch in range(1, config["num_epochs"] + 1):
         # training loop over all batches
         model.train()
@@ -112,6 +133,7 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
         train_losses = []
         valid_losses = []
         valid_accuracies = []
+        valid_f1_scores = []
         for batch in train_loader:
             batch["device"] = device
             out = model(batch).to("cpu")
@@ -129,30 +151,51 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
             loss = multi_class_cross_entropy(out, batch["l"])
             valid_losses.append(loss.item())
             _, accur = get_accuracy(predictions.tolist(), batch["l"])
+            f1 = f1_score(y_true=batch["l"], y_pred=predictions, average="weighted")
             valid_accuracies.append(accur)
+
+            valid_f1_scores.append(f1)
 
         # calculate average loss and accuracy over an epoch
         train_loss = np.average(train_losses)
         valid_loss = np.average(valid_losses)
         valid_accuracy = np.average(valid_accuracies)
+        valid_f1 = np.average(valid_f1_scores)
 
-        if lowest_loss - valid_loss > tolerance:
-            lowest_loss = valid_loss
-            best_epoch = epoch
-            best_accuracy = valid_accuracy
-            current_patience = 0
-            torch.save(model.state_dict(), model_path)
+        # stop when f1 score is the highest
+        if early_stopping_criterion == "f1":
+            if valid_f1 > best_f1 - tolerance:
+                lowest_loss = valid_loss
+                best_f1 = valid_f1
+                best_epoch = epoch
+                best_accuracy = valid_accuracy
+                current_patience = 0
+                torch.save(model.state_dict(), model_path)
+            else:
+                current_patience += 1
+        # stop when loss is the lowest
         else:
-            current_patience += 1
+            if lowest_loss - valid_loss > tolerance:
+                lowest_loss = valid_loss
+                best_epoch = epoch
+                best_accuracy = valid_accuracy
+                best_f1 = valid_f1
+                current_patience = 0
+                torch.save(model.state_dict(), model_path)
+
+            else:
+                current_patience += 1
         if current_patience > config["patience"]:
             break
 
-        logger.info("current patience: %d , epoch %d , train loss: %.5f, validation loss: %.5f, accuracy: %.5f " %
-                    (current_patience, epoch, train_loss, valid_loss, valid_accuracy))
+        logger.info(
+            "current patience: %d , epoch %d , train loss: %.5f, validation loss: %.5f, accuracy: %.5f, f1 score: %5f" %
+            (current_patience, epoch, train_loss, valid_loss, valid_accuracy, valid_f1))
     logger.info(
         "training finnished after %d epochs, train loss: %.5f, best epoch : %d , best validation loss: %.5f, "
-        "best validation accuracy: %.5f " %
-        (epoch, train_loss, best_epoch, lowest_loss, best_accuracy))
+        "best validation accuracy: %.5f, best f1 score %.5f" %
+
+        (epoch, train_loss, best_epoch, lowest_loss, best_accuracy, best_f1))
 
 
 def predict(test_loader, model, config, device):  # for test set
@@ -166,11 +209,11 @@ def predict(test_loader, model, config, device):  # for test set
     test_loss = []
     predictions = []
     accuracy = []
+    f1_scores = []
     for batch in test_loader:
         batch["device"] = device
         out = model(batch).to("cpu")
         if config["model"]["classification"] == "multi":
-
             test_loss.append(multi_class_cross_entropy(out, batch["l"]).item())
             _, prediction = torch.max(out, 1)
             prediction = prediction.tolist()
@@ -178,10 +221,12 @@ def predict(test_loader, model, config, device):  # for test set
             test_loss.append(binary_class_cross_entropy(out.squeeze(), batch["l"].float()).item())
             prediction = convert_logits_to_binary_predictions(out)
         _, accur = get_accuracy(prediction, batch["l"])
+        f1 = f1_score(y_pred=prediction, y_true=batch["l"], average="weighted")
         predictions.append(prediction)
         accuracy.append(accur)
+        f1_scores.append(f1)
     predictions = [item for sublist in predictions for item in sublist]  # flatten list
-    return predictions, np.average(test_loss), np.average(accuracy)
+    return predictions, np.average(test_loss), np.average(accuracy), np.average(f1_scores)
 
 
 def get_accuracy(predictions, labels):
@@ -229,8 +274,11 @@ if __name__ == "__main__":
 
     logging.config.dictConfig(create_config(log_file))
     logger = logging.getLogger("train")
+    logger.info("parameter")
+    logger.info(str(config))
     logger.info("Training %s model with %s embeddings. \n Logging to %s \n Save model to %s" % (
         config["model"]["type"], config["feature_extractor"], log_file, model_path))
+
 
     # set random seed
     np.random.seed(config["seed"])
@@ -245,12 +293,13 @@ if __name__ == "__main__":
     # load validation data in batches
     valid_loader = torch.utils.data.DataLoader(dataset_valid,
                                                batch_size=config["iterator"]["batch_size"],
-                                               shuffle=True,
+                                               shuffle=False,
                                                num_workers=0)
 
     # load test data in batches
     test_loader = torch.utils.data.DataLoader(dataset_test,
                                               batch_size=config["iterator"]["batch_size"],
+                                              shuffle=False,
                                               num_workers=0)
 
     model = None
@@ -275,15 +324,15 @@ if __name__ == "__main__":
     valid_model.eval()
     if valid_model:
         logger.info("generating predictions for validation data...")
-        valid_predictions, validation_loss, valid_acc = predict(valid_loader, valid_model, config, device)
+        valid_predictions, validation_loss, valid_acc, valid_f1 = predict(valid_loader, valid_model, config, device)
         save_predictions(valid_predictions, prediction_path_dev)
-        logger.info("validation loss: %.5f, validation accuracy : %.5f" %
-                    (validation_loss, valid_acc))
+        logger.info("validation loss: %.5f, validation accuracy : %.5f, valid f1 : %.5f" %
+                    (validation_loss, valid_acc, valid_f1))
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
-            test_predictions, test_loss, test_acc = predict(test_loader, valid_model, config, device)
+            test_predictions, test_loss, test_acc, test_f1 = predict(test_loader, valid_model, config, device)
             save_predictions(test_predictions, prediction_path_test)
-            logger.info("test loss: %.5f, test accuracy : %.5f" %
-                        (test_loss, test_acc))
+            logger.info("test loss: %.5f, test accuracy : %.5f, test f1 : %.5f" %
+                        (test_loss, test_acc, test_f1))
     else:
         logging.error("model could not been loaded correctly")
