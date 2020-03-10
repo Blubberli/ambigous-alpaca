@@ -90,7 +90,7 @@ class PretrainTransweighTest(unittest.TestCase):
     def test_embedding_normalization(self):
         """Test whether the composed phrase has been normalized to unit norm"""
         composed_phrase = self.model(self.input)
-        np.testing.assert_almost_equal(np.linalg.norm(composed_phrase[0].data), 1)
+        np.testing.assert_almost_equal(np.linalg.norm(composed_phrase[0].data), 1.0)
 
     def test_dataloader(self):
         """Test whether the pretrained dataset holds a vector for each instance in batch that has the correct dimension"""
