@@ -8,7 +8,6 @@ from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseS
 from scripts.data_loader import create_label_encoder
 
 
-
 def init_classifier(config):
     """
     This method initialized the classifier with parameter specified in the config file
@@ -60,9 +59,11 @@ def get_datasets(config):
     :param config: the configuration file
     :return: training, validation, test dataset
     """
-    # create label encoder
-    label_encoder = create_label_encoder(config["train_data_path"], config["validation_data_path"],
-                                         config["test_data_path"])
+    label_encoder = None
+    # create label encoder if not pretraining:
+    if config["model"]["type"] != "transweigh_pretrain":
+        label_encoder = create_label_encoder(config["train_data_path"], config["validation_data_path"],
+                                             config["test_data_path"])
     # datasets with bert embeddings
     if config["feature_extractor"]["contextualized_embeddings"] is True:
         bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
@@ -127,7 +128,7 @@ def get_datasets(config):
                                                          )
             else:
                 dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"][
+                                                          embedding_path=config["feature_extractor"]["static"],
                                                           label_encoder=label_encoder)
                 dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
                                                          embedding_path=config["feature_extractor"]["static"][
@@ -155,7 +156,8 @@ def get_datasets(config):
                                                           tokenizer_model=config["sequence"]["tokenizer"],
                                                           label_encoder=label_encoder)
 
-    assert dataset_test and dataset_valid and dataset_train, "there was an error when constructing the datasets"
+            assert dataset_test and dataset_valid and dataset_train, "there was an error when constructing the " \
+                                                                     "datasets"
     return dataset_train, dataset_valid, dataset_test
 
 
