@@ -9,13 +9,25 @@ import numpy as np
 from scripts import BertExtractor, StaticEmbeddingExtractor
 
 
+def create_label_encoder(training_data, validation_data, test_data, separator="\t", label="label"):
+    label_encoder = LabelEncoder()
+    training_labels = set(pandas.read_csv(training_data, delimiter=separator, index_col=False)[label])
+    validation_labels = set(pandas.read_csv(validation_data, delimiter=separator, index_col=False)[label])
+    test_labels = set(pandas.read_csv(test_data, delimiter=separator, index_col=False)[label])
+    all_labels = list(training_labels.union(validation_labels).union(test_labels))
+    label_encoder.fit(all_labels)
+    return label_encoder
+
+
 class SimplePhraseDataset(ABC, Dataset):
-    def __init__(self, data_path, separator="\t", phrase="phrase", label="label"):
+    def __init__(self, data_path, label_encoder, separator="\t", phrase="phrase", label="label"):
+        self._label = label
         self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
+        self._label_encoder = label_encoder
         self._phrases = list(self.data[phrase])
         self._labels = list(self.data[label])
-        self._label_encoder = LabelEncoder()
-        self._labels, self._label2index = self.encode_labels()
+
+        self._labels = label_encoder.transform(self.labels)
 
         self._word1 = [phrase.split(" ")[0] for phrase in self.phrases]
         self._word2 = [phrase.split(" ")[1] for phrase in self.phrases]
@@ -35,12 +47,6 @@ class SimplePhraseDataset(ABC, Dataset):
 
     def __getitem__(self, idx):
         return self.samples[idx]
-
-    def encode_labels(self):
-        values = self.label_encoder.fit_transform(self.labels)
-        keys = self.label_encoder.classes_
-        label2index = dict(zip(keys, values))
-        return self.label_encoder.fit_transform(self.labels), label2index
 
     @property
     def data(self):
@@ -71,8 +77,8 @@ class SimplePhraseDataset(ABC, Dataset):
         return self._label_encoder
 
     @property
-    def label2index(self):
-        return self._label2index
+    def label(self):
+        return self._label
 
 
 class SimplePhraseContextualizedDataset(SimplePhraseDataset):
@@ -82,7 +88,7 @@ class SimplePhraseContextualizedDataset(SimplePhraseDataset):
     a column containing a label. The names of the corresponding columns can be specified.
     """
 
-    def __init__(self, data_path, bert_model,
+    def __init__(self, data_path, label_encoder, bert_model,
                  max_len, lower_case, batch_size, separator="\t", phrase="phrase", label="label", context="context"):
         """
 
@@ -97,7 +103,7 @@ class SimplePhraseContextualizedDataset(SimplePhraseDataset):
         """
         self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                                 batch_size=batch_size)
-        super(SimplePhraseContextualizedDataset, self).__init__(data_path)
+        super(SimplePhraseContextualizedDataset, self).__init__(data_path, label_encoder)
         self._sentences = list(self.data[context])
         self._samples = self.populate_samples()
 
@@ -127,7 +133,7 @@ class SimplePhraseStaticDataset(SimplePhraseDataset):
     a column containing a label. The names of the corresponding columns can be specified.
     """
 
-    def __init__(self, data_path, embedding_path, separator="\t", phrase="phrase", label="label"):
+    def __init__(self, data_path, label_encoder, embedding_path, separator="\t", phrase="phrase", label="label"):
         """
 
         :param data_path: [String] The path to the csv datafile that needs to be transformed into a dataset.
@@ -137,7 +143,7 @@ class SimplePhraseStaticDataset(SimplePhraseDataset):
         :param label: [String]the label of the column the class label is stored in
         """
         self._feature_extractor = StaticEmbeddingExtractor(path_to_embeddings=embedding_path)
-        super(SimplePhraseStaticDataset, self).__init__(data_path)
+        super(SimplePhraseStaticDataset, self).__init__(data_path, label_encoder)
         self._samples = self.populate_samples()
 
     def lookup_embedding(self, words):
@@ -163,7 +169,7 @@ class PhraseAndContextDatasetStatic(SimplePhraseDataset):
     space), a column containing a label. The names of the corresponding columns can be specified.
     """
 
-    def __init__(self, data_path, embedding_path, tokenizer_model, separator="\t", phrase="phrase", context="context",
+    def __init__(self, data_path, label_encoder, embedding_path, tokenizer_model, separator="\t", phrase="phrase", context="context",
                  label="label"):
         """
         :param data_path: [String] The path to the csv datafile that needs to be transformed into a dataset.
@@ -176,7 +182,7 @@ class PhraseAndContextDatasetStatic(SimplePhraseDataset):
         :param label: [String]the label of the column the class label is stored in
         """
         self._feature_extractor = StaticEmbeddingExtractor(path_to_embeddings=embedding_path)
-        super(PhraseAndContextDatasetStatic, self).__init__(data_path)
+        super(PhraseAndContextDatasetStatic, self).__init__(data_path, label_encoder)
         self._sentences = list(self.data[context])
         self._tokenizer = somajo.SoMaJo(tokenizer_model, split_camel_case=True, split_sentences=False)
         self._sentences = self.tokenizer.tokenize_text(self.sentences)
@@ -231,7 +237,7 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
     Bert embeddings.
     """
 
-    def __init__(self, data_path, bert_model,
+    def __init__(self, data_path, label_encoder, bert_model,
                  max_len, lower_case, batch_size, tokenizer_model, separator="\t", phrase="phrase", context="context",
                  label="label"):
         """
@@ -248,7 +254,7 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
         """
         self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                                 batch_size=batch_size)
-        super(PhraseAndContextDatasetBert, self).__init__(data_path)
+        super(PhraseAndContextDatasetBert, self).__init__(data_path, label_encoder)
         self._sentences = list(self.data[context])
         self._tokenizer = somajo.SoMaJo(tokenizer_model, split_camel_case=True, split_sentences=False)
         self._sentences = self.tokenizer.tokenize_text(self.sentences)
@@ -300,3 +306,72 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
     @property
     def tokenizer(self):
         return self._tokenizer
+
+
+class PretrainCompmodelDataset(Dataset):
+
+    def __init__(self, data_path, embedding_path, separator=" ", mod="modifier", head="head", phrase="phrase"):
+        """
+        This datasets can be used to pretrain a composition model on a reconstruction task
+        :param data_path: the path to the dataset, should have a header
+        :param embedding_path: the path to the pretrained static word embeddings
+        :param separator: the separator within the dataset (default = whitespace)
+        :param mod: the name of the column holding the modifier words
+        :param head: the name of the column holding the head words
+        :param phrase: the name of the column holding the phrases
+        """
+        self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
+        self._modifier_words = self.data[mod]
+        self._head_words = self.data[head]
+        self._phrases = self.data[phrase]
+        assert len(self.modifier_words) == len(self.head_words) == len(
+            self.phrases), "invalid input data, different lenghts"
+
+        self._feature_extractor = StaticEmbeddingExtractor(path_to_embeddings=embedding_path)
+        self._samples = self.populate_samples()
+
+    def lookup_embedding(self, words):
+        return self.feature_extractor.get_array_embeddings(array_words=words)
+
+    def populate_samples(self):
+        """
+        Looks up the embeddings for all modifier, heads and phrases and stores them in a dictionary
+        :return: List of dictionary objects, each storing the modifier, head and phrase embeddings (w1, w2, l)
+        """
+        word1_embeddings = self.lookup_embedding(self.modifier_words)
+        word2_embeddings = self.lookup_embedding(self.head_words)
+        label_embeddings = self.lookup_embedding(self.phrases)
+        return [
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "phrase": self.phrases[i]}
+            for i in
+            range(len(self.phrases))]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.samples[idx]
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def modifier_words(self):
+        return self._modifier_words
+
+    @property
+    def head_words(self):
+        return self._head_words
+
+    @property
+    def phrases(self):
+        return self._phrases
+
+    @property
+    def feature_extractor(self):
+        return self._feature_extractor
+
+    @property
+    def samples(self):
+        return self._samples
