@@ -1,0 +1,12 @@
+modifier head phrase
+Apfel Kuchen Apfelkuchen
+Zimt Schnecke Zimtschnecke
+Brot Korb Brotkorb
+Ostern Hase Osterhase
+Ostern Ei Osterei
+Schnee Mann Schneemann
+Milch Mann Milchmann
+Ehe Frau Ehefrau
+Ehe Mann Ehemann
+Liebe Brief Liebesbrief
+Sonne Bank Sonnenbank
