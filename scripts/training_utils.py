@@ -1,12 +1,12 @@
 import torch
-
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, TransweighPretrain, \
-    PhraseContextClassifier
+from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
+    PhraseContextClassifier, TransweighPretrain
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
 
 from scripts.data_loader import create_label_encoder
+
 
 
 def init_classifier(config):
@@ -71,6 +71,7 @@ def get_datasets(config):
         lower_case = bert_parameter["lower_case"]
         batch_size = bert_parameter["batch_size"]
         if config["feature_extractor"]["context"] is False:
+
             # phrase only
             dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
                                                               bert_model=bert_model,
@@ -127,7 +128,6 @@ def get_datasets(config):
             else:
                 dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
                                                           embedding_path=config["feature_extractor"]["static"][
-                                                              "pretrained_model"],
                                                           label_encoder=label_encoder)
                 dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
                                                          embedding_path=config["feature_extractor"]["static"][
