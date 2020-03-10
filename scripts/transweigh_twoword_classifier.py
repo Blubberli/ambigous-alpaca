@@ -12,7 +12,8 @@ class TransweighTwoWordClassifier(nn.Module):
     objective
     """
 
-    def __init__(self, input_dim, hidden_dim, label_nr, dropout_rate, transformations, normalize_embeddings):
+    def __init__(self, input_dim, hidden_dim, label_nr, dropout_rate, transformations, normalize_embeddings,
+                 add_single_words=False):
         super().__init__()
         # --- we create the following variable that will be trainable parameters for our classifier:
 
@@ -29,6 +30,9 @@ class TransweighTwoWordClassifier(nn.Module):
         self._combining_bias = nn.Parameter(torch.empty(input_dim), requires_grad=True)
         nn.init.uniform_(self.combining_bias)
         # - these variables are needed for the classifier (one transformation, one output layer)s
+        self._add_single_words = add_single_words
+        if self.add_single_words:
+            input_dim = input_dim * 3
         self._hidden = nn.Linear(input_dim, hidden_dim)
         self._output = nn.Linear(self.hidden.out_features, label_nr)
         self._dropout_rate = dropout_rate
@@ -36,7 +40,8 @@ class TransweighTwoWordClassifier(nn.Module):
 
     def forward(self, batch):
         """
-        First composes the input vectors into one representation. This is then feed trough a hidden layer with a Relu and
+        First composes the input vectors into one representation. This is then feed trough a hidden layer with a Relu
+        and
         finally trough an output layer that returns weights for each class.
         :param word1: word1: the representation of the first word (torch tensor)
         :param word2: word2: the representation of the second word (torch tensor)
@@ -45,6 +50,9 @@ class TransweighTwoWordClassifier(nn.Module):
         """
         device = batch["device"]
         self._composed_phrase = self.compose(batch["w1"].to(device), batch["w2"].to(device), self.training)
+        if self.add_single_words:
+            w1_w2 = torch.cat((batch["w1"].to(device), batch["w2"].to(device)), 1)
+            self._composed_phrase = torch.cat((w1_w2, self.composed_phrase), 1)
         hidden = F.relu(self.hidden(self.composed_phrase))
         hidden = F.dropout(hidden, p=self.dropout_rate)
         class_weights = self.output(hidden)
@@ -102,3 +110,7 @@ class TransweighTwoWordClassifier(nn.Module):
     @property
     def composed_phrase(self):
         return self._composed_phrase
+
+    @property
+    def add_single_words(self):
+        return self._add_single_words
