@@ -128,7 +128,8 @@ def get_datasets(config):
                                                          )
             else:
                 dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"],
+                                                          embedding_path=config["feature_extractor"]["static"][
+                                                             "pretrained_model"],
                                                           label_encoder=label_encoder)
                 dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
                                                          embedding_path=config["feature_extractor"]["static"][
