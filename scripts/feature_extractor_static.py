@@ -18,6 +18,7 @@ class StaticEmbeddingExtractor:
             self._embeds = finalfusion.Embeddings.read_word2vec(path_to_embeddings, mmap=True)
         else:
             print("attempt to read invalid embeddings")
+        self._embedding_dim = self._embeds.embedding(self._embeds.vocab()[0]).shape[0]
 
     def get_embedding(self, word):
         """
@@ -28,7 +29,7 @@ class StaticEmbeddingExtractor:
         embedding = self._embeds.embedding(word)
         if embedding is None:
             print("found unknown word : ", word)
-            embedding = np.rand([200], dtype=np.float32)
+            embedding = np.rand([self.embedding_dim], dtype=np.float32)
         return embedding
 
     def get_array_embeddings(self, array_words):
@@ -44,3 +45,7 @@ class StaticEmbeddingExtractor:
     @property
     def embeds(self):
         return self._embeds
+
+    @property
+    def embedding_dim(self):
+        return self._embedding_dim
