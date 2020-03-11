@@ -210,6 +210,7 @@ def predict(test_loader, model, config, device):  # for test set
     predictions = []
     accuracy = []
     f1_scores = []
+    model.to(device)
     for batch in test_loader:
         batch["device"] = device
         out = model(batch).to("cpu")
