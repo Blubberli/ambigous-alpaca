@@ -26,7 +26,8 @@ def init_classifier(config):
                                                  dropout_rate=config["model"]["dropout"],
                                                  label_nr=config["model"]["label_size"],
                                                  normalize_embeddings=config["model"]["normalize_embeddings"],
-                                                 transformations=config["model"]["transformations"])
+                                                 transformations=config["model"]["transformations"],
+                                                 add_single_words=config["model"]["add_single_words"])
 
     if config["model"]["type"] == "phrase_context":
         classifier = PhraseContextClassifier(embedding_dim=config["model"]["input_dim"],
@@ -42,7 +43,8 @@ def init_classifier(config):
                                             dropout_rate=config["model"]["dropout"],
                                             label_nr=config["model"]["label_size"],
                                             normalize_embeddings=config["model"]["normalize_embeddings"],
-                                            pretrained_model=config["pretrained_model_path"])
+                                            pretrained_model=config["pretrained_model_path"],
+                                            add_single_words=config["model"]["add_single_words"])
     if config["model"]["type"] == "transweigh_pretrain":
         classifier = TransweighPretrain(input_dim=config["model"]["input_dim"],
                                         dropout_rate=config["model"]["dropout"],
