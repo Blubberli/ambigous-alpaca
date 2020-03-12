@@ -1,3 +1,4 @@
+import numpy as np
 import finalfusion
 
 
@@ -17,14 +18,18 @@ class StaticEmbeddingExtractor:
             self._embeds = finalfusion.Embeddings.read_word2vec(path_to_embeddings, mmap=True)
         else:
             print("attempt to read invalid embeddings")
-
+        self._embedding_dim = self._embeds.embedding(self._embeds.vocab()[0]).shape[0]
     def get_embedding(self, word):
         """
         takes a word and returns its embedding
         :param word: the word for which an embedding should be returned
-        :return: the embedding of the word
+        :return: the embedding of the word or random embedding if word not in vocab
         """
-        return self._embeds.embedding(word)
+        embedding = self._embeds.embedding(word)
+        if embedding is None:
+            print("found unknown word : ", word)
+            embedding = np.random.rand(self.embedding_dim).astype(np.float32)
+        return embedding
 
     def get_array_embeddings(self, array_words):
         """
@@ -33,9 +38,13 @@ class StaticEmbeddingExtractor:
         :return: array_embeddings: the embeddings of those words in an array of length x
         """
         array_embeddings = []
-        [array_embeddings.append(self._embeds.embedding(words)) for words in array_words]
+        [array_embeddings.append(self.get_embedding(words)) for words in array_words]
         return array_embeddings
 
     @property
     def embeds(self):
         return self._embeds
+
+    @property
+    def embedding_dim(self):
+        return self._embedding_dim
