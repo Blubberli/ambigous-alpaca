@@ -19,7 +19,6 @@ class StaticEmbeddingExtractor:
         else:
             print("attempt to read invalid embeddings")
         self._embedding_dim = self._embeds.embedding(self._embeds.vocab()[0]).shape[0]
-
     def get_embedding(self, word):
         """
         takes a word and returns its embedding
@@ -29,7 +28,7 @@ class StaticEmbeddingExtractor:
         embedding = self._embeds.embedding(word)
         if embedding is None:
             print("found unknown word : ", word)
-            embedding = np.rand([self.embedding_dim], dtype=np.float32)
+            embedding = np.random.rand(self.embedding_dim).astype(np.float32)
         return embedding
 
     def get_array_embeddings(self, array_words):
