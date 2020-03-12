@@ -8,7 +8,7 @@ class StaticEmbeddingExtractorTest(unittest.TestCase):
     def setUp(self):
         path_skipgram = "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"
         path_struct = "embeddings/german-structgram-mincount-30-ctx-10-dims-300.fifu"
-        path_word2vec = "/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/Data/Embeddings/English/encow-adj-n.fifu"
+        path_word2vec = "embeddings/encow-adj-n.fifu"
         self.extractor_skipgram = StaticEmbeddingExtractor(path_skipgram)
         self.extractor_structgram = StaticEmbeddingExtractor(path_struct)
         self.extractor_word2vec = StaticEmbeddingExtractor(path_word2vec)
@@ -40,7 +40,7 @@ class StaticEmbeddingExtractorTest(unittest.TestCase):
         expected_dimensions = 300
         np.testing.assert_equal(expected, len(self.array_embeddings))
         np.testing.assert_equal(expected_dimensions, self.array_embeddings[0].shape[0])
-    def test_additional(self):
 
+    def test_additional(self):
         emb = self.extractor_word2vec.get_embedding("hobadibuduasdfasdfadsdsaadsdfsdfs")
         np.testing.assert_equal(emb.shape[0], self.extractor_word2vec.embedding_dim)
