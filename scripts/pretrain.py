@@ -10,6 +10,8 @@ from torch import optim
 from torch.utils.data import DataLoader
 from scripts.training_utils import init_classifier, get_datasets
 from scripts.loss_functions import get_loss_cosine_distance
+import ffp
+from scripts.ranking import Ranker
 
 
 def pretrain(config, train_loader, valid_loader, model_path, device):
@@ -89,19 +91,29 @@ def predict(test_loader, model, device):
     for batch in test_loader:
         batch["device"] = device
         out = model(batch).squeeze().to("cpu")
+        for pred in out:
+            predictions.append(pred.detach().numpy())
         loss = get_loss_cosine_distance(composed_phrase=out, original_phrase=batch["l"])
-        predictions.append(out)
         test_loss.append(loss.item())
         orig_phrases.append(batch["phrase"])
-    predictions = [item for sublist in predictions for item in sublist]  # flatten list
     orig_phrases = [item for sublist in orig_phrases for item in sublist]
+    predictions = np.array(predictions)
     return predictions, np.average(test_loss), orig_phrases
 
 
-def save_predictions(predictions, orig_phrases, path):
+def save_predictions_phrases(predictions, orig_phrases, path):
     word2index = dict(zip(orig_phrases, range(0, len(orig_phrases))))
     vocab = ffp.vocab.SimpleVocab(words=orig_phrases, index=word2index)
-    storage = ffp.storage.NdArray(np.array(predictions))
+    storage = ffp.storage.NdArray(predictions)
+    fifu_embeddings = ffp.embeddings.Embeddings(vocab=vocab, storage=storage)
+    fifu_embeddings.write(path)
+
+
+def save_predictions_labels(predictions, labels, path):
+    label_vocab = [labels[i] + str(i) for i in range(len(labels))]
+    word2index = dict(zip(label_vocab, range(0, len(label_vocab))))
+    vocab = ffp.vocab.SimpleVocab(words=label_vocab, index=word2index)
+    storage = ffp.storage.NdArray(predictions)
     fifu_embeddings = ffp.embeddings.Embeddings(vocab=vocab, storage=storage)
     fifu_embeddings.write(path)
 
@@ -129,11 +141,13 @@ if __name__ == "__main__":
     model_path = str(Path(config["model_path"]).joinpath(save_name))
     prediction_path_dev = str(Path(config["model_path"]).joinpath(save_name + "_dev_predictions.fifu"))
     prediction_path_test = str(Path(config["model_path"]).joinpath(save_name + "_test_predictions.fifu"))
+    modus = config["model"]["classification"]
+    assert modus == "pretrain_label" or modus == "pretrain_phrase", "no valid modus specified in config"
 
     logging.config.dictConfig(create_config(log_file))
     logger = logging.getLogger("train")
-    logger.info("Training %s model with %s embeddings. \n Logging to %s \n Save model to %s" % (
-        config["model"]["type"], config["feature_extractor"], log_file, model_path))
+    logger.info("Training %s model with %s modus. \n Logging to %s \n Save model to %s" % (
+        config["model"]["type"], modus, log_file, model_path))
 
     # set random seed
     np.random.seed(config["seed"])
@@ -165,21 +179,32 @@ if __name__ == "__main__":
 
     # train
     pretrain(config, train_loader, valid_loader, model_path, device)
-
     # test and & evaluate
     logger.info("Loading best model from %s", model_path)
     valid_model = init_classifier(config)
     valid_model.load_state_dict(torch.load(model_path))
     valid_model.eval()
+
     if valid_model:
         logger.info("generating predictions for validation data...")
-        valid_predictions, valid_loss, valid_phrases = predict(valid_loader, valid_model, config)
-        save_predictions(predictions=valid_predictions, orig_phrases=valid_phrases, path=prediction_path_dev)
+        valid_predictions, valid_loss, valid_phrases = predict(valid_loader, valid_model, device)
+        if modus == "pretrain_label":
+            save_predictions_labels(predictions=valid_predictions, labels=valid_phrases, path=prediction_path_dev)
+        else:
+            save_predictions_phrases(predictions=valid_predictions, orig_phrases=valid_phrases, path=prediction_path_dev)
+        rank_loader = DataLoader(dataset_valid, batch_size=1, num_workers=0)
+        ranker = Ranker(path_to_predictions=prediction_path_dev, embedding_path=config["feature_extractor"]["static"][
+                                                             "pretrained_model"],dataloader=rank_loader, all_labels=)
+        logger.info("saved predictions to %s" % prediction_path_dev)
         logger.info("validation loss: %.5f" % (valid_loss))
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
-            test_predictions, test_loss, test_phrases = predict(test_loader, valid_model, config)
-            save_predictions(predictions=test_predictions, orig_phrases=test_phrases, path=prediction_path_test)
+            test_predictions, test_loss, test_phrases = predict(test_loader, valid_model, device)
+            if modus == "pretrain_label":
+                save_predictions_labels(predictions=test_predictions, labels=test_phrases, path=prediction_path_test)
+            else:
+                save_predictions_phrases(predictions=test_predictions, orig_phrases=test_phrases, path=prediction_path_test)
+            logger.info("saved predictions to %s" % prediction_path_test)
             logger.info("test loss: %.5f" % (test_loss))
     else:
         logging.error("model could not been loaded correctly")
