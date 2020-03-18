@@ -1,20 +1,23 @@
 import unittest
 import pathlib
-from scripts import PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
+import json
 import numpy as np
+from scripts import training_utils
 from torch.utils.data import DataLoader
 
 
 class PhraseAndContextDatasetsTest(unittest.TestCase):
     def setUp(self):
-        data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/train.txt")
-        embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
-            "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-        self.static_set = PhraseAndContextDatasetStatic(data_path=data_path, embedding_path=embedding_path,
-                                                        tokenizer_model="de_CMC")
-        self.bert_set = PhraseAndContextDatasetBert(data_path=data_path, bert_model='bert-base-german-cased',
-                                                    max_len=20,
-                                                    lower_case=False, batch_size=20, tokenizer_model="de_CMC")
+        config_static = str(
+            pathlib.Path(__file__).parent.absolute().joinpath("test_configs/phrase_context_static_config.json"))
+        config_contextualized = str(
+            pathlib.Path(__file__).parent.absolute().joinpath("test_configs/phrase_context_contextualized_config.json"))
+        with open(config_static, 'r') as f:
+            self.config_static = json.load(f)
+        with open(config_contextualized, 'r') as f:
+            self.config_contextualized = json.load(f)
+        _, _, self.static_set = training_utils.get_datasets(self.config_static)
+        _, _, self.bert_set = training_utils.get_datasets(self.config_contextualized)
 
     def test_dataloader(self):
         train_loader = DataLoader(self.static_set,
@@ -31,6 +34,7 @@ class PhraseAndContextDatasetsTest(unittest.TestCase):
             np.testing.assert_equal(batch["seq_lengths"].shape[0], batch["l"].shape[0])
             max_val = max(batch["seq_lengths"]).data.numpy()
             np.testing.assert_equal(max_len >= max_val, True)
+
         train_loader = DataLoader(self.bert_set,
                                   batch_size=10,
                                   shuffle=True,
@@ -61,6 +65,7 @@ class PhraseAndContextDatasetsTest(unittest.TestCase):
                 non_padded = np.count_nonzero(padded_vec, axis=0)[0]
                 np.testing.assert_equal(real_len, non_padded)
                 np.testing.assert_array_almost_equal(padded_vec[max_len - 1], np.zeros(shape=[300]))
+
         train_loader = DataLoader(self.bert_set,
                                   batch_size=10,
                                   shuffle=True,

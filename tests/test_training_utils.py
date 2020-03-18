@@ -13,7 +13,7 @@ class TrainingUtilsTest(unittest.TestCase):
     """
 
     def setUp(self):
-        config_path = str(pathlib.Path(__file__).parent.absolute().joinpath("test_config.json"))
+        config_path = str(pathlib.Path(__file__).parent.absolute().joinpath("test_configs/config.json"))
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
@@ -30,4 +30,3 @@ class TrainingUtilsTest(unittest.TestCase):
         np.testing.assert_equal(classifier.dropout_rate, 0.2)
 
         np.testing.assert_equal(classifier.dropout_rate, 0.2)
-
