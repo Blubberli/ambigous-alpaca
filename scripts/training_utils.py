@@ -62,10 +62,16 @@ def get_datasets(config):
     :return: training, validation, test dataset
     """
     label_encoder = None
+    # dataset separator of csv
+    separator = config["data_loader"]["separator"]
+    label = config["data_loader"]["label"]
+    phrase = config["data_loader"]["phrase"]
     # create label encoder if not pretraining:
     if config["model"]["type"] != "transweigh_pretrain":
-        label_encoder = create_label_encoder(config["train_data_path"], config["validation_data_path"],
-                                             config["test_data_path"])
+        label_encoder = create_label_encoder(training_data=config["train_data_path"],
+                                             validation_data=config["validation_data_path"],
+                                             test_data=config["test_data_path"],
+                                             separator=separator, label=label)
     # datasets with bert embeddings
     if config["feature_extractor"]["contextualized_embeddings"] is True:
         bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
@@ -73,89 +79,95 @@ def get_datasets(config):
         max_len = bert_parameter["max_sent_len"]
         lower_case = bert_parameter["lower_case"]
         batch_size = bert_parameter["batch_size"]
+        context = config["data_loader"]["context"]
         if config["feature_extractor"]["context"] is False:
-
             # phrase only
             dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
-                                                              bert_model=bert_model,
-                                                              lower_case=lower_case, max_len=max_len,
-                                                              batch_size=batch_size,
-                                                              label_encoder=label_encoder)
+                                                              bert_model=bert_model, lower_case=lower_case,
+                                                              max_len=max_len, separator=separator,
+                                                              batch_size=batch_size, label_encoder=label_encoder,
+                                                              label=label, phrase=phrase, context=context)
             dataset_valid = SimplePhraseContextualizedDataset(data_path=config["validation_data_path"],
                                                               bert_model=bert_model,
                                                               lower_case=lower_case, max_len=max_len,
-                                                              batch_size=batch_size,
-                                                              label_encoder=label_encoder)
+                                                              separator=separator,
+                                                              batch_size=batch_size, label_encoder=label_encoder,
+                                                              label=label, phrase=phrase, context=context)
             dataset_test = SimplePhraseContextualizedDataset(data_path=config["test_data_path"],
                                                              bert_model=bert_model,
                                                              lower_case=lower_case, max_len=max_len,
-                                                             batch_size=batch_size,
-                                                             label_encoder=label_encoder)
+                                                             separator=separator,
+                                                             batch_size=batch_size, label_encoder=label_encoder,
+                                                             label=label, phrase=phrase, context=context)
         else:
             # phrase and sentence
             dataset_train = PhraseAndContextDatasetBert(data_path=config["train_data_path"],
                                                         bert_model=bert_model,
                                                         lower_case=lower_case, max_len=max_len,
-                                                        batch_size=batch_size,
+                                                        batch_size=batch_size, separator=separator,
                                                         tokenizer_model=config["sequence"]["tokenizer"],
-                                                        label_encoder=label_encoder)
+                                                        label_encoder=label_encoder,
+                                                        label=label, phrase=phrase, context=context)
             dataset_valid = PhraseAndContextDatasetBert(data_path=config["validation_data_path"],
                                                         bert_model=bert_model,
                                                         lower_case=lower_case, max_len=max_len,
-                                                        batch_size=batch_size,
+                                                        batch_size=batch_size, separator=separator,
                                                         tokenizer_model=config["sequence"]["tokenizer"],
-                                                        label_encoder=label_encoder)
+                                                        label_encoder=label_encoder,
+                                                        label=label, phrase=phrase, context=context)
             dataset_test = PhraseAndContextDatasetBert(data_path=config["test_data_path"],
                                                        bert_model=bert_model,
                                                        lower_case=lower_case, max_len=max_len,
-                                                       batch_size=batch_size,
+                                                       batch_size=batch_size, separator=separator,
                                                        tokenizer_model=config["sequence"]["tokenizer"],
-                                                       label_encoder=label_encoder)
+                                                       label_encoder=label_encoder,
+                                                       label=label, phrase=phrase, context=context)
     # datasets with static embeddings
     else:
+        embedding_path = config["feature_extractor"]["static"]["pretrained_model"]
         # phrase only
         if config["feature_extractor"]["context"] is False:
+            mod = config["data_loader"]["modifier"]
+            head = config["data_loader"]["head"]
             if config["model"]["type"] == "transweigh_pretrain":
                 dataset_train = PretrainCompmodelDataset(data_path=config["train_data_path"],
-                                                         embedding_path=config["feature_extractor"]["static"][
-                                                             "pretrained_model"]
-                                                         )
+                                                         embedding_path=embedding_path, separator=separator,
+                                                         phrase=phrase, mod=mod, head=head)
                 dataset_test = PretrainCompmodelDataset(data_path=config["test_data_path"],
-                                                        embedding_path=config["feature_extractor"]["static"][
-                                                            "pretrained_model"]
-                                                        )
+                                                        embedding_path=embedding_path, separator=separator,
+                                                        phrase=phrase, mod=mod, head=head)
                 dataset_valid = PretrainCompmodelDataset(data_path=config["validation_data_path"],
-                                                         embedding_path=config["feature_extractor"]["static"][
-                                                             "pretrained_model"]
-                                                         )
+                                                         embedding_path=embedding_path, separator=separator,
+                                                         phrase=phrase, mod=mod, head=head)
             else:
                 dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"][
-                                                             "pretrained_model"],
+                                                          embedding_path=embedding_path, separator=separator,
+                                                          phrase=phrase, label=label,
                                                           label_encoder=label_encoder)
                 dataset_test = SimplePhraseStaticDataset(data_path=config["test_data_path"],
-                                                         embedding_path=config["feature_extractor"]["static"][
-                                                             "pretrained_model"],
+                                                         embedding_path=embedding_path, separator=separator,
+                                                         phrase=phrase, label=label,
                                                          label_encoder=label_encoder)
                 dataset_valid = SimplePhraseStaticDataset(data_path=config["validation_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"][
-                                                              "pretrained_model"],
+                                                          embedding_path=embedding_path, separator=separator,
+                                                          phrase=phrase, label=label,
                                                           label_encoder=label_encoder)
         else:
             # phrase and sentence
+            context = config["data_loader"]["context"]
             dataset_train = PhraseAndContextDatasetStatic(data_path=config["train_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"][
-                                                              "pretrained_model"],
+                                                          embedding_path=embedding_path, separator=separator,
+                                                          phrase=phrase, context=context, label=label,
                                                           tokenizer_model=config["sequence"]["tokenizer"],
                                                           label_encoder=label_encoder)
             dataset_test = PhraseAndContextDatasetStatic(data_path=config["test_data_path"],
-                                                         embedding_path=config["feature_extractor"]["static"][
-                                                             "pretrained_model"],
+                                                         embedding_path=embedding_path, separator=separator,
+                                                         phrase=phrase, context=context, label=label,
                                                          tokenizer_model=config["sequence"]["tokenizer"],
                                                          label_encoder=label_encoder)
             dataset_valid = PhraseAndContextDatasetStatic(data_path=config["validation_data_path"],
-                                                          embedding_path=config["feature_extractor"]["static"][
-                                                              "pretrained_model"],
+                                                          embedding_path=embedding_path, separator=separator,
+                                                          phrase=phrase, context=context, label=label,
                                                           tokenizer_model=config["sequence"]["tokenizer"],
                                                           label_encoder=label_encoder)
 
