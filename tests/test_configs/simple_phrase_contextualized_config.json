@@ -1,7 +1,7 @@
 {
-  "train_data_path": "/Users/nwitte/PycharmProjects/ambigous-alpaca/tests/data_multiclassification/train.txt",
-  "validation_data_path": "/Users/nwitte/PycharmProjects/ambigous-alpaca/tests/data_multiclassification/val.txt",
-  "test_data_path": "/Users/nwitte/PycharmProjects/ambigous-alpaca/tests/data_multiclassification/test.txt",
+  "train_data_path": "../tests/data_multiclassification/train.txt",
+  "validation_data_path": "../ambigous-alpaca/tests/data_multiclassification/val.txt",
+  "test_data_path": "../ambigous-alpaca/tests/data_multiclassification/test.txt",
   "data_loader": {
     "separator": "\t",
     "phrase": "phrase",
