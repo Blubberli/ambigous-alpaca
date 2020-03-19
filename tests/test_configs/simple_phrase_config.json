@@ -26,7 +26,7 @@
     },
     "static": {
       "type": "skipgram",
-      "pretrained_model": "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"
+      "pretrained_model": "embeddings/german-structgram-mincount-30-ctx-10-dims-300.fifu"
     },
     "context": false,
     "sentence_pooling": "mean",
