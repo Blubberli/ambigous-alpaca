@@ -80,8 +80,7 @@ class EvaluationTest(unittest.TestCase):
         label2index = dict(zip(self.labels, range(len(self.labels))))
         embedder = StaticEmbeddingExtractor("embeddings/ranking_embeddings.fifu")
         embeddings = embedder.get_array_embeddings(self.labels)
-        ranks = ranker.get_target_based_rank(label2index=label2index, predicted_embeddings=predictions,
-                                             label_embeddings=embeddings)
+        ranks = ranker.get_target_based_rank()
         print("ranks")
         print(ranks)
         np.testing.assert_equal(ranks, correct_ranks)
