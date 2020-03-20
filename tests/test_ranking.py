@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 import ffp
+import torch
 import numpy as np
 from scripts.data_loader import extract_all_words, PretrainCompmodelDataset
 from torch.utils.data import DataLoader
@@ -49,7 +50,7 @@ class EvaluationTest(unittest.TestCase):
                         path_to_ranks="data_pretraining/ranks.txt",
                         embedding_path="embeddings/ranking_embeddings.fifu", all_labels=self.labels,
                         dataloader=self.data_loader, max_rank=5)
-        bad_prediction = np.array([0.0, 1.0])
+        bad_prediction = torch.from_numpy(np.array([0.0, 1.0]))
         ranker._predicted_embeddings[2] = bad_prediction
         ranks = ranker.get_target_based_rank()
         np.testing.assert_equal(ranks[2], 5)
@@ -59,7 +60,7 @@ class EvaluationTest(unittest.TestCase):
                         path_to_ranks="data_pretraining/ranks.txt",
                         embedding_path="embeddings/ranking_embeddings.fifu", all_labels=self.labels,
                         dataloader=self.data_loader, max_rank=5)
-        close_prediction = np.array([0.65380877, 0.74601357])
+        close_prediction = torch.from_numpy(np.array([0.7030, 0.668]))
         ranker._predicted_embeddings[2] = close_prediction / np.linalg.norm(close_prediction)
         ranks = ranker.get_target_based_rank()
         np.testing.assert_equal(ranks[2], 2)
@@ -85,22 +86,16 @@ class EvaluationTest(unittest.TestCase):
         print(ranks)
         np.testing.assert_equal(ranks, correct_ranks)
 
-        """
-        def test_assertion(self):
-            self.assertRaises(AssertionError,
-                              lambda: evaluation.get_all_ranks(predictions_file=self._predictions_file,
-                                                               word_embeddings=self._word_embeddings,
-                                                               max_rank=20, batch_size=3, path_to_ranks=""))
-    
-        def test_quartiles_uneven(self):
-            ranks = [6, 7, 15, 36, 39, 40, 41, 42, 43, 47, 49]
-            quartiles, percent = evaluation.calculate_quartiles(ranks)
-            result = [15, 40, 43]
-            np.testing.assert_equal(quartiles, result)
-    
-        def test_quartiles_even(self):
-            ranks = [7, 15, 36, 39, 40, 41]
-            quartiles, percent = evaluation.calculate_quartiles(ranks)
-            result = [15, 37.5, 40]
-            np.testing.assert_equal(quartiles, result)
-"""
+
+    def test_quartiles_uneven(self):
+        ranks = [6, 7, 15, 36, 39, 40, 41, 42, 43, 47, 49]
+        quartiles, percent = Ranker.calculate_quartiles(ranks)
+        result = [15, 40, 43]
+        np.testing.assert_equal(quartiles, result)
+
+    def test_quartiles_even(self):
+        ranks = [7, 15, 36, 39, 40, 41]
+        quartiles, percent = Ranker.calculate_quartiles(ranks)
+        result = [15, 37.5, 40]
+        np.testing.assert_equal(quartiles, result)
+
