@@ -7,6 +7,3 @@ kirsch baum kirschbaum
 quark tasche quarktasche
 kastanien baum kastanienbaum
 kirsch strudel kirschstrudel
-leder tasche ledertasche
-stamm baum stammbaum
-<unk> <unk> <unk>
