@@ -9,14 +9,32 @@ import numpy as np
 from scripts import BertExtractor, StaticEmbeddingExtractor
 
 
-def create_label_encoder(training_data, validation_data, test_data, separator, label):
+def create_label_encoder(all_labels):
     label_encoder = LabelEncoder()
+    label_encoder.fit(all_labels)
+    return label_encoder
+
+
+def extract_all_labels(training_data, validation_data, test_data, separator, label):
     training_labels = set(pandas.read_csv(training_data, delimiter=separator, index_col=False)[label])
     validation_labels = set(pandas.read_csv(validation_data, delimiter=separator, index_col=False)[label])
     test_labels = set(pandas.read_csv(test_data, delimiter=separator, index_col=False)[label])
     all_labels = list(training_labels.union(validation_labels).union(test_labels))
-    label_encoder.fit(all_labels)
-    return label_encoder
+    return all_labels
+
+
+def extract_all_words(training_data, validation_data, test_data, separator, modifier, head, phrase):
+    training_labels = set(pandas.read_csv(training_data, delimiter=separator, index_col=False)[modifier]).union(
+        set(pandas.read_csv(training_data, delimiter=separator, index_col=False)[head])).union(
+        set(pandas.read_csv(training_data, delimiter=separator, index_col=False)[phrase]))
+    validation_labels = set(pandas.read_csv(validation_data, delimiter=separator, index_col=False)[modifier]).union(
+        set(pandas.read_csv(validation_data, delimiter=separator, index_col=False)[head])).union(
+        set(pandas.read_csv(validation_data, delimiter=separator, index_col=False)[phrase]))
+    test_labels = set(pandas.read_csv(test_data, delimiter=separator, index_col=False)[modifier]).union(
+        set(pandas.read_csv(test_data, delimiter=separator, index_col=False)[head])).union(
+        set(pandas.read_csv(test_data, delimiter=separator, index_col=False)[phrase]))
+    all_labels = list(training_labels.union(validation_labels).union(test_labels))
+    return all_labels
 
 
 class SimplePhraseDataset(ABC, Dataset):

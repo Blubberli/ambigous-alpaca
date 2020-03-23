@@ -5,7 +5,7 @@ from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, Transfe
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
 
-from scripts.data_loader import create_label_encoder
+from scripts.data_loader import create_label_encoder, extract_all_labels
 
 
 def init_classifier(config):
@@ -68,10 +68,11 @@ def get_datasets(config):
     phrase = config["data_loader"]["phrase"]
     # create label encoder if not pretraining:
     if config["model"]["type"] != "transweigh_pretrain":
-        label_encoder = create_label_encoder(training_data=config["train_data_path"],
-                                             validation_data=config["validation_data_path"],
-                                             test_data=config["test_data_path"],
-                                             separator=separator, label=label)
+        labels = extract_all_labels(training_data=config["train_data_path"],
+                                    validation_data=config["validation_data_path"],
+                                    test_data=config["test_data_path"],
+                                    separator=separator, label=label)
+        label_encoder = create_label_encoder(all_labels=labels)
     # datasets with bert embeddings
     if config["feature_extractor"]["contextualized_embeddings"] is True:
         bert_parameter = config["feature_extractor"]["contextualized"]["bert"]

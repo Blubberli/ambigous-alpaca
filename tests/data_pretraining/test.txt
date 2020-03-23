@@ -1,0 +1,5 @@
+modifier head phrase
+Apfel Baum Apfelbaum
+Sonne Sonne Sonnenschein
+Apfel Sonne Quarktasche
+Apfel Baum Apfelbaum
