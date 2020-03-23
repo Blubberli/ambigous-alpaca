@@ -1,9 +1,5 @@
 modifier head phrase
-apfel baum apfelbaum
-blumenduft blumenduft blumenduft
-sonnenkind sonnenkind sonnenkind
-quark strudel quarkstrudel
-kirsch baum kirschbaum
-quark tasche quarktasche
-kastanien baum kastanienbaum
-kirsch strudel kirschstrudel
+Apfel Baum Apfelbaum
+Sonne Sonne Sonnenschein
+Apfel Sonne Quarktasche
+Apfel Baum Apfelbaum
