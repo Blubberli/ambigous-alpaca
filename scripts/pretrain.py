@@ -176,6 +176,7 @@ if __name__ == "__main__":
     logger.info("the training data contains %d words" % len(dataset_train))
     logger.info("the validation data contains %d words" % len(dataset_valid))
     logger.info("the test data contains %d words" % len(dataset_test))
+    y_label = None
     if modus == "pretrain_label":
         labels = extract_all_labels(training_data=config["train_data_path"],
                                     validation_data=config["validation_data_path"],
@@ -207,7 +208,8 @@ if __name__ == "__main__":
         logger.info("validation loss: %.5f" % (valid_loss))
         rank_loader = torch.utils.data.DataLoader(dataset_valid, batch_size=len(dataset_valid), num_workers=0)
         ranker = Ranker(path_to_predictions=prediction_path_dev, embedding_path=config["feature_extractor"]["static"][
-            "pretrained_model"], dataloader=rank_loader, all_labels=labels, path_to_ranks=rank_path_dev)
+            "pretrained_model"], data_loader=rank_loader, all_labels=labels, path_to_ranks=rank_path_dev,
+                        y_label=config["data_loader"]["phrase"], max_rank=1000)
         logger.info("saved ranks to %s" % rank_path_dev)
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
@@ -218,8 +220,8 @@ if __name__ == "__main__":
             rank_loader = torch.utils.data.DataLoader(dataset_test, batch_size=len(dataset_test), num_workers=0)
             ranker = Ranker(path_to_predictions=prediction_path_test,
                             embedding_path=config["feature_extractor"]["static"][
-                                "pretrained_model"], dataloader=rank_loader, all_labels=labels,
-                            path_to_ranks=rank_path_test)
+                                "pretrained_model"], data_loader=rank_loader, all_labels=labels,
+                            path_to_ranks=rank_path_test, y_label=config["data_loader"]["phrase"], max_rank=1000)
             logger.info("saved ranks to %s" % rank_path_test)
     else:
         logging.error("model could not been loaded correctly")
