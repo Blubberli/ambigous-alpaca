@@ -39,7 +39,7 @@ class MatrixPretrain(nn.Module):
         :return: the raw label scores
         """
         composed_phrase = comp_functions.concat(word1, word2, axis=1)
-        transformed = F.relu(self.matrix_layer(composed_phrase))
+        transformed = self.matrix_layer(composed_phrase)
         reg_transformed = F.dropout(transformed, p=self.dropout_rate)
         if self.normalize_embeddings:
             reg_transformed = F.normalize(reg_transformed, p=2, dim=1)
