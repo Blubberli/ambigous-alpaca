@@ -1,6 +1,6 @@
 import torch
 from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
-    PhraseContextClassifier, TransweighPretrain
+    PhraseContextClassifier, TransweighPretrain, MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
@@ -28,6 +28,13 @@ def init_classifier(config):
                                                  normalize_embeddings=config["model"]["normalize_embeddings"],
                                                  transformations=config["model"]["transformations"],
                                                  add_single_words=config["model"]["add_single_words"])
+    if config["model"]["type"] == "matrix_twoword":
+        classifier = MatrixTwoWordClassifier(input_dim=config["model"]["input_dim"],
+                                             hidden_dim=config["model"]["hidden_size"],
+                                             dropout_rate=config["model"]["dropout"],
+                                             label_nr=config["model"]["label_size"],
+                                             normalize_embeddings=config["model"]["normalize_embeddings"],
+                                             add_single_words=config["model"]["add_single_words"])
 
     if config["model"]["type"] == "phrase_context":
         classifier = PhraseContextClassifier(embedding_dim=config["model"]["input_dim"],
@@ -45,11 +52,24 @@ def init_classifier(config):
                                             normalize_embeddings=config["model"]["normalize_embeddings"],
                                             pretrained_model=config["pretrained_model_path"],
                                             add_single_words=config["model"]["add_single_words"])
+    if config["model"]["type"] == "matrix_transfer":
+        classifier = MatrixTransferClassifier(input_dim=config["model"]["input_dim"],
+                                              hidden_dim=config["model"]["hidden_size"],
+                                              dropout_rate=config["model"]["dropout"],
+                                              label_nr=config["model"]["label_size"],
+                                              normalize_embeddings=config["model"]["normalize_embeddings"],
+                                              pretrained_model=config["pretrained_model_path"],
+                                              add_single_words=config["model"]["add_single_words"])
+
     if config["model"]["type"] == "transweigh_pretrain":
         classifier = TransweighPretrain(input_dim=config["model"]["input_dim"],
                                         dropout_rate=config["model"]["dropout"],
                                         normalize_embeddings=config["model"]["normalize_embeddings"],
                                         transformations=config["model"]["transformations"])
+    if config["model"]["type"] == "matrix_pretrain":
+        classifier = MatrixPretrain(input_dim=config["model"]["input_dim"],
+                                    dropout_rate=config["model"]["dropout"],
+                                    normalize_embeddings=config["model"]["normalize_embeddings"])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
