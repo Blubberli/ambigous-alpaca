@@ -7,7 +7,7 @@ from scripts import StaticEmbeddingExtractor
 
 class Ranker:
 
-    def __init__(self, path_to_predictions, path_to_ranks, embedding_path, data_loader, all_labels, max_rank, y_label):
+    def __init__(self, path_to_predictions, embedding_path, data_loader, all_labels, max_rank, y_label):
         """
         This class stores the functionality to rank a prediction with respect to some gold standard representations and
         to compute the precision at certain ranks or the quartiles
@@ -37,10 +37,8 @@ class Ranker:
         self._label_embeddings = F.normalize(torch.from_numpy(np.array(self._label_embeddings)), p=2, dim=1)
         self._predicted_embeddings = F.normalize(torch.from_numpy(np.array(self._predicted_embeddings)), p=2, dim=1)
         # compute the ranks, quartiles and precision
-        self._ranks = self.get_target_based_rank()
+        self._ranks, self._similarities = self.get_target_based_rank()
         self._quartiles, self._result = self.calculate_quartiles(self._ranks)
-        # save the ranks
-        self.save_ranks(self._ranks, path_to_ranks)
 
     def get_target_based_rank(self):
         """
@@ -49,6 +47,7 @@ class Ranker:
         :return: a list with the ranks for all the composed representations in the batch
         """
         all_ranks = []
+        cosine_similarities = []
         # get the index for each label in the true labels
         target_idxs = [self.label2index[label] for label in self.true_labels]
 
@@ -64,6 +63,7 @@ class Ranker:
             target_composed_similarity = np.dot(self.predicted_embeddings[i], target_repr[i])
             # delete the similarity between the target label and itself
             target_sims = np.delete(target_dict_similarities[:, i], target_idxs[i])
+            cosine_similarities.append(target_sims)
 
             # the rank is the number of vectors with greater similarity that the one between
             # the target representation and the composed one; no sorting is required, just
@@ -73,12 +73,12 @@ class Ranker:
                 rank = self.max_rank
             all_ranks.append(rank)
 
-        return all_ranks
+        return all_ranks, cosine_similarities
 
-    def save_ranks(self, ranks, file_to_save):
+    def save_ranks(self, file_to_save):
         with open(file_to_save, "w", encoding="utf8") as f:
             for i in range(len(self._true_labels)):
-                f.write(self.true_labels[i] + " " + str(ranks[i]) + "\n")
+                f.write(self.true_labels[i] + " " + str(self.ranks[i]) + "\n")
         print("ranks saved to file: " + file_to_save)
 
     @staticmethod
@@ -135,3 +135,7 @@ class Ranker:
     @property
     def result(self):
         return self._result
+
+    @property
+    def similarities(self):
+        return self._similarities

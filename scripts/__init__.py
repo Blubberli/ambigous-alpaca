@@ -18,3 +18,5 @@ from scripts.transweigh_pretrain import TransweighPretrain
 from scripts.matrix_pretrain import MatrixPretrain
 from scripts.matrix_twoword_classifier import MatrixTwoWordClassifier
 from scripts.matrix_transfer_classifier import MatrixTransferClassifier
+
+from scripts.ranking import Ranker
