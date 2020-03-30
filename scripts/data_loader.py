@@ -341,9 +341,9 @@ class PretrainCompmodelDataset(Dataset):
         :param phrase: the name of the column holding the phrases
         """
         self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
-        self._modifier_words = self.data[mod]
-        self._head_words = self.data[head]
-        self._phrases = self.data[phrase]
+        self._modifier_words = list(self.data[mod])
+        self._head_words = list(self.data[head])
+        self._phrases = list(self.data[phrase])
         assert len(self.modifier_words) == len(self.head_words) == len(
             self.phrases), "invalid input data, different lenghts"
 

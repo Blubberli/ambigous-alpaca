@@ -9,7 +9,7 @@ from scripts.feature_extractor_static import StaticEmbeddingExtractor
 from scripts.transweigh_twoword_classifier import TransweighTwoWordClassifier
 from scripts.transfer_comp_classifier import TransferCompClassifier
 from scripts.data_loader import SimplePhraseStaticDataset, SimplePhraseContextualizedDataset, \
-    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert
+    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
 
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset
@@ -18,5 +18,9 @@ from scripts.transweigh_pretrain import TransweighPretrain
 from scripts.matrix_pretrain import MatrixPretrain
 from scripts.matrix_twoword_classifier import MatrixTwoWordClassifier
 from scripts.matrix_transfer_classifier import MatrixTransferClassifier
+from scripts.matrix_transfer_ranking import MatrixTransferRanker
+from scripts.transweigh_transfer_ranking import TransweighTransferRanker
 
 from scripts.ranking import Ranker
+
+
