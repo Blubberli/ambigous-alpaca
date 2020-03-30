@@ -97,7 +97,7 @@ class Ranker:
             quartiles = list(map(np.median, [sorted_data[0:mid_index], sorted_data, sorted_data[mid_index + 1:]]))
         else:
             quartiles = list(map(np.median, [sorted_data[0:mid_index + 1], sorted_data, sorted_data[mid_index + 1:]]))
-        return quartiles, "%.2f of ranks = 1; %.2f%% of ranks <=5" % (
+        return quartiles, "%.2f%% of ranks = 1; %.2f%% of ranks <=5" % (
             (100 * leq1 / float(len(sorted_data))), (100 * leq5 / float(len(sorted_data))))
 
     @property

@@ -1,6 +1,7 @@
 import torch
 from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
-    PhraseContextClassifier, TransweighPretrain, MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier
+    PhraseContextClassifier, TransweighPretrain, MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier, \
+    MatrixTransferRanker, TransweighTransferRanker
 
 from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
@@ -60,7 +61,14 @@ def init_classifier(config):
                                               normalize_embeddings=config["model"]["normalize_embeddings"],
                                               pretrained_model=config["pretrained_model_path"],
                                               add_single_words=config["model"]["add_single_words"])
-
+    if config["model"]["type"] == "matrix_transfer_ranking":
+        classifier = MatrixTransferRanker(dropout_rate=config["model"]["dropout"],
+                                          normalize_embeddings=config["model"]["normalize_embeddings"],
+                                          pretrained_model=config["pretrained_model_path"])
+    if config["model"]["type"] == "transweigh_transfer_ranking":
+        classifier = TransweighTransferRanker(dropout_rate=config["model"]["dropout"],
+                                              normalize_embeddings=config["model"]["normalize_embeddings"],
+                                              pretrained_model=config["pretrained_model_path"])
     if config["model"]["type"] == "transweigh_pretrain":
         classifier = TransweighPretrain(input_dim=config["model"]["input_dim"],
                                         dropout_rate=config["model"]["dropout"],
@@ -87,7 +95,7 @@ def get_datasets(config):
     label = config["data_loader"]["label"]
     phrase = config["data_loader"]["phrase"]
     # create label encoder if not pretraining:
-    if config["model"]["type"] != "transweigh_pretrain":
+    if not "pretrain" in config["model"]["type"] and not "ranking" in config["model"]["type"]:
         labels = extract_all_labels(training_data=config["train_data_path"],
                                     validation_data=config["validation_data_path"],
                                     test_data=config["test_data_path"],
@@ -150,7 +158,7 @@ def get_datasets(config):
         if config["feature_extractor"]["context"] is False:
             mod = config["data_loader"]["modifier"]
             head = config["data_loader"]["head"]
-            if config["model"]["type"] == "transweigh_pretrain":
+            if "pretrain" in config["model"]["type"] or "ranking" in config["model"]["type"]:
                 dataset_train = PretrainCompmodelDataset(data_path=config["train_data_path"],
                                                          embedding_path=embedding_path, separator=separator,
                                                          phrase=phrase, mod=mod, head=head)
