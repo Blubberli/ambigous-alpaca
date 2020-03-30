@@ -37,7 +37,7 @@ class Ranker:
         self._label_embeddings = F.normalize(torch.from_numpy(np.array(self._label_embeddings)), p=2, dim=1)
         self._predicted_embeddings = F.normalize(torch.from_numpy(np.array(self._predicted_embeddings)), p=2, dim=1)
         # compute the ranks, quartiles and precision
-        self._ranks, self._similarities = self.get_target_based_rank()
+        self._ranks, self._gold_similarities, self._composed_similarities = self.get_target_based_rank()
         self._quartiles, self._result = self.calculate_quartiles(self._ranks)
 
     def get_target_based_rank(self):
@@ -47,7 +47,8 @@ class Ranker:
         :return: a list with the ranks for all the composed representations in the batch
         """
         all_ranks = []
-        cosine_similarities = []
+        gold_similarities = []
+        composed_similarities = []
         # get the index for each label in the true labels
         target_idxs = [self.label2index[label] for label in self.true_labels]
 
@@ -61,9 +62,10 @@ class Ranker:
         for i in range(self._predicted_embeddings.shape[0]):
             # compute similarity between the target and the predicted vector
             target_composed_similarity = np.dot(self.predicted_embeddings[i], target_repr[i])
+            composed_similarities.append(target_composed_similarity)
+            gold_similarities.append(target_dict_similarities[:, i])
             # delete the similarity between the target label and itself
             target_sims = np.delete(target_dict_similarities[:, i], target_idxs[i])
-            cosine_similarities.append(target_sims)
 
             # the rank is the number of vectors with greater similarity that the one between
             # the target representation and the composed one; no sorting is required, just
@@ -73,7 +75,7 @@ class Ranker:
                 rank = self.max_rank
             all_ranks.append(rank)
 
-        return all_ranks, cosine_similarities
+        return all_ranks, gold_similarities, composed_similarities
 
     def save_ranks(self, file_to_save):
         with open(file_to_save, "w", encoding="utf8") as f:
@@ -92,6 +94,9 @@ class Ranker:
         sorted_data = sorted(ranks)
         leq5 = sum([1 for rank in sorted_data if rank <= 5])
         leq1 = sum([1 for rank in sorted_data if rank == 1])
+        if len(ranks) < 3:
+            return ranks, "%.2f%% of ranks = 1; %.2f%% of ranks <=5" % (
+                (100 * leq1 / float(len(sorted_data))), (100 * leq5 / float(len(sorted_data))))
         mid_index = math.floor((len(sorted_data) - 1) / 2)
         if len(sorted_data) % 2 != 0:
             quartiles = list(map(np.median, [sorted_data[0:mid_index], sorted_data, sorted_data[mid_index + 1:]]))
@@ -137,5 +142,9 @@ class Ranker:
         return self._result
 
     @property
-    def similarities(self):
-        return self._similarities
+    def gold_similarities(self):
+        return self._gold_similarities
+
+    @property
+    def composed_similarities(self):
+        return self._composed_similarities

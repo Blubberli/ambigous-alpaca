@@ -208,8 +208,9 @@ if __name__ == "__main__":
         logger.info("validation loss: %.5f" % (valid_loss))
         rank_loader = torch.utils.data.DataLoader(dataset_valid, batch_size=len(dataset_valid), num_workers=0)
         ranker = Ranker(path_to_predictions=prediction_path_dev, embedding_path=config["feature_extractor"]["static"][
-            "pretrained_model"], data_loader=rank_loader, all_labels=labels, path_to_ranks=rank_path_dev,
+            "pretrained_model"], data_loader=rank_loader, all_labels=labels,
                         y_label="phrase", max_rank=1000)
+        ranker.save_ranks(rank_path_dev)
 
         logger.info(ranker.result)
         logger.info("quartiles : %s" % str(ranker.quartiles))
@@ -223,8 +224,9 @@ if __name__ == "__main__":
             rank_loader = torch.utils.data.DataLoader(dataset_test, batch_size=len(dataset_test), num_workers=0)
             ranker = Ranker(path_to_predictions=prediction_path_test,
                             embedding_path=config["feature_extractor"]["static"][
-                                "pretrained_model"], data_loader=rank_loader, all_labels=labels,
-                            path_to_ranks=rank_path_test, y_label="phrase", max_rank=1000)
+                                "pretrained_model"], data_loader=rank_loader, all_labels=labels, y_label="phrase",
+                            max_rank=1000)
+            ranker.save_ranks(rank_path_test)
             logger.info(ranker.result)
             logger.info("quartiles : %s" % str(ranker.quartiles))
             logger.info("saved ranks to %s" % rank_path_test)
