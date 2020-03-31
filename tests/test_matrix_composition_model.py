@@ -7,7 +7,7 @@ import torch
 from torch import optim
 from scripts.data_loader import PretrainCompmodelDataset
 from torch.utils.data import DataLoader
-from scripts import MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier
+from scripts import MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier, MatrixTransferRanker
 from scripts import training_utils
 from scripts import multi_class_cross_entropy, get_loss_cosine_distance
 
@@ -37,9 +37,12 @@ class MatrixCompositionModelTest(unittest.TestCase):
                                                         normalize_embeddings=True)
         self.model_pretrain = MatrixPretrain(input_dim=300, dropout_rate=0.1, normalize_embeddings=True)
         self.train_matrix_classifier()
-        pretrained_model = torch.load("models/matrix_classifier")
         self.model_transfer = MatrixTransferClassifier(input_dim=300, hidden_dim=100, label_nr=3, dropout_rate=0.1,
-                                                       normalize_embeddings=True, pretrained_model=pretrained_model)
+                                                       normalize_embeddings=True,
+                                                       pretrained_model="models/matrix_classifier")
+        self.train_matrix_pretrain()
+        self.model_transfer_rank = MatrixTransferRanker(dropout_rate=0.1, normalize_embeddings=True,
+                                                        pretrained_model="models/matrix_pretrain")
 
     @staticmethod
     def acess_named_parameter(model, parameter_name):
@@ -59,6 +62,16 @@ class MatrixCompositionModelTest(unittest.TestCase):
             loss.backward()
             optimizer.step()
         torch.save(self.model_multiclass.state_dict(), "models/matrix_classifier")
+
+    def train_matrix_pretrain(self):
+        optimizer = optim.Adam(self.model_pretrain.parameters())
+        for batch in self.pretrain_loader:
+            batch["device"] = "cpu"
+            out = self.model_pretrain(batch).squeeze().to("cpu")
+            loss = get_loss_cosine_distance(composed_phrase=out, original_phrase=batch["l"])
+            loss.backward()
+            optimizer.step()
+        torch.save(self.model_pretrain.state_dict(), "models/matrix_pretrain")
 
     def test_matrix_classifier(self):
         """Test whether matrix classification model can be used to compute the loss"""
@@ -86,5 +99,15 @@ class MatrixCompositionModelTest(unittest.TestCase):
         batch["device"] = "cpu"
         output = self.model_transfer(batch)
         loss = multi_class_cross_entropy(output, batch["l"]).item()
+        np.testing.assert_equal(math.isnan(loss), False)
+        np.testing.assert_equal(loss >= 0, True)
+
+    def test_matrix_transfer_ranking(self):
+        """Test whether the transfer matrix ranking model can be called and whether the loss can be computed"""
+        batch = next(iter(self.pretrain_loader))
+        batch["device"] = "cpu"
+        out = self.model_transfer_rank(batch).squeeze().to("cpu")
+        loss = get_loss_cosine_distance(composed_phrase=out, original_phrase=batch["l"]).item()
+        np.testing.assert_equal(out.shape, [4, 300])
         np.testing.assert_equal(math.isnan(loss), False)
         np.testing.assert_equal(loss >= 0, True)
