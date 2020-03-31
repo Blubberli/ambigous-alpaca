@@ -20,3 +20,7 @@ from scripts.matrix_twoword_classifier import MatrixTwoWordClassifier
 from scripts.matrix_transfer_classifier import MatrixTransferClassifier
 from scripts.matrix_transfer_ranking import MatrixTransferRanker
 from scripts.transweigh_transfer_ranking import TransweighTransferRanker
+
+from scripts.ranking import Ranker
+
+
