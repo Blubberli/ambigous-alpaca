@@ -6,7 +6,9 @@ from scripts.ranking import Ranker
 from scripts.training_utils import get_datasets
 from collections import defaultdict
 from scripts.data_loader import extract_all_labels
-
+from sklearn.metrics import classification_report, confusion_matrix
+from pathlib import Path
+import pandas as pd
 
 def class_performance_ranks(ranker, eval_path):
     """
@@ -44,18 +46,49 @@ def class_performance_ranks(ranker, eval_path):
             f.write(s)
 
 
+def class_performance_classification(path_results, gold_loader, dataloader, eval_path):
+    preds = np.load(path_results)
+    gold = next(iter(gold_loader))
+    gold = gold["l"].numpy()
+    report = classification_report(gold, preds, output_dict=True)
+    encoder = dataloader.label_encoder
+    f = open(eval_path, "w")
+    for k, v in report.items():
+        if k.isdigit():
+            label = encoder.inverse_transform([int(k)])
+            f.write(str(label) + "\t" + str(v) + "\n")
+        else:
+            f.write(str(k) + "\t" + str(v) + "\n")
+
+    f.close()
+
+def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path):
+
+    preds = np.load(path_results)
+    gold = next(iter(gold_loader))
+    gold = gold["l"].numpy()
+    encoder = dataloader.label_encoder
+    gold_l = encoder.inverse_transform(gold)
+    preds_l = encoder.inverse_transform(preds)
+    labels = np.unique(np.concatenate((preds_l, gold_l), axis=0))
+    conf_matrix = confusion_matrix(gold_l, preds_l)
+    conf_matrix = pd.DataFrame(conf_matrix, index=labels, columns=labels)
+    conf_matrix.to_csv(conf_path, sep="\t")
+
+
 if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("path_to_config")
+    argp.add_argument('--confusion_matrix', default=False, action='store_true')
     argp.add_argument('--ranking', default=False, action='store_true')
     argp = argp.parse_args()
 
     with open(argp.path_to_config, 'r') as f:
         config = json.load(f)
-    prediction_path_dev = config["pretrained_model_path"] + "_dev_predictions.npy"
-    prediction_path_test = config["pretrained_model_path"] + "_test_predictions.npy"
-    eval_path_dev = config["pretrained_model_path"] + "_evaluation_dev.txt"
-    eval_path_test = config["pretrained_model_path"] + "_evaluation_test.txt"
+    prediction_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_dev_predictions.npy"))
+    prediction_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_test_predictions.npy"))
+    eval_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_evaluation_dev.txt"))
+    eval_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_evaluation_test.txt"))
     dataset_train, dataset_valid, dataset_test = get_datasets(config)
 
     # load validation data in batches
@@ -63,7 +96,6 @@ if __name__ == "__main__":
 
     # load test data in batches
     test_loader = DataLoader(dataset_test, batch_size=len(dataset_test), shuffle=False)
-
     if argp.ranking:
         rank_path_dev = config["pretrained_model_path"] + "_dev_ranks.txt"
         rank_path_test = config["pretrained_model_path"] + "_test_ranks.txt"
@@ -84,4 +116,20 @@ if __name__ == "__main__":
             class_performance_ranks(ranker, eval_path_test)
 
     else:
-        print("code for classification")
+
+        if config["eval_on_test"]:
+            class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
+            class_performance_classification(prediction_path_test, test_loader, dataset_test, eval_path_test)
+            if argp.confusion_matrix:
+                conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
+                conf_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_test.csv"))
+                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
+                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_test)
+
+        else:
+            class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
+            if argp.confusion_matrix:
+                conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
+                confusion_matrix(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
+
+
