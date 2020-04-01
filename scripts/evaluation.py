@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
                 conf_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_test.csv"))
                 confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
-                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_test)
+                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_test, conf_path_test)
 
         else:
             class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
