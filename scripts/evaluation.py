@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from pathlib import Path
 import pandas as pd
 
+
 def class_performance_ranks(ranker, eval_path):
     """
     This method computes different evaluation statistics for a validation / testset ranker object and writes them to
@@ -62,8 +63,8 @@ def class_performance_classification(path_results, gold_loader, dataloader, eval
 
     f.close()
 
-def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path):
 
+def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path):
     preds = np.load(path_results)
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
@@ -97,8 +98,8 @@ if __name__ == "__main__":
     # load test data in batches
     test_loader = DataLoader(dataset_test, batch_size=len(dataset_test), shuffle=False)
     if argp.ranking:
-        rank_path_dev = config["pretrained_model_path"] + "_dev_ranks.txt"
-        rank_path_test = config["pretrained_model_path"] + "_test_ranks.txt"
+        rank_path_dev = config["model_path"] + "_dev_ranks.txt"
+        rank_path_test = config["model_path"] + "_test_ranks.txt"
         labels = extract_all_labels(training_data=config["train_data_path"],
                                     validation_data=config["validation_data_path"],
                                     test_data=config["test_data_path"],
@@ -131,5 +132,3 @@ if __name__ == "__main__":
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
                 confusion_matrix(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
-
-
