@@ -9,6 +9,8 @@ from scripts.data_loader import extract_all_labels
 from sklearn.metrics import classification_report, confusion_matrix
 from pathlib import Path
 import pandas as pd
+import seaborn as sn
+import matplotlib.pyplot as plt
 
 
 def class_performance_ranks(ranker, eval_path):
@@ -32,6 +34,7 @@ def class_performance_ranks(ranker, eval_path):
         relation2gold_similarities[ranker.true_labels[i]].append(ranker.gold_similarities[i])
         relation2comp_similarities[ranker.true_labels[i]].append(ranker.composed_similarities[i])
         relation2ranks[ranker.true_labels[i]].append(ranker.ranks[i])
+    eval_file = open(eval_path, "w")
     for rel, sims in relation2gold_similarities.items():
         sims = np.average(np.array(sims).transpose(), axis=1)
         most_similar_indices = sims.argsort()[-5:][::-1]
@@ -43,8 +46,9 @@ def class_performance_ranks(ranker, eval_path):
         s = "\nrelation : %s\nquartiles: %s\npercentages: %s\nmost similar relations to gold rel: %s\ncosine " \
             "similarities to similar relations : %s, average cosine similarity composed vs gold : %.2f" % (
                 rel, str(quartiles), p, str(most_similar_relations), str(most_similar_sims), composed2rel_sim)
-        with open(eval_path, "w") as f:
-            f.write(s)
+
+        eval_file.write(s)
+    eval_file.close()
 
 
 def class_performance_classification(path_results, gold_loader, dataloader, eval_path):
@@ -64,7 +68,19 @@ def class_performance_classification(path_results, gold_loader, dataloader, eval
     f.close()
 
 
-def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path):
+def plot_confusion_matrix(confusion_matrix, save_path):
+    """
+    Method to create a plot of a confusion matrix
+    :param confusion_matrix: the confusion matrix as a dataframe
+    :param save_path: the path to save the plot as png
+    """
+    plt.figure(figsize=(10, 11))
+    sn.heatmap(confusion_matrix, annot=True)
+    sn.set(font_scale=0.9)
+    plt.savefig(save_path, dpi=300)
+
+
+def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path, plot):
     preds = np.load(path_results)
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
@@ -74,6 +90,8 @@ def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_
     labels = np.unique(np.concatenate((preds_l, gold_l), axis=0))
     conf_matrix = confusion_matrix(gold_l, preds_l)
     conf_matrix = pd.DataFrame(conf_matrix, index=labels, columns=labels)
+    if plot:
+        plot_confusion_matrix(confusion_matrix=conf_matrix, save_path=conf_path.replace("csv", "png"))
     conf_matrix.to_csv(conf_path, sep="\t")
 
 
@@ -81,6 +99,7 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("path_to_config")
     argp.add_argument('--confusion_matrix', default=False, action='store_true')
+    argp.add_argument("--plot_matrix", default=False, action='store_true')
     argp.add_argument('--ranking', default=False, action='store_true')
     argp = argp.parse_args()
 
@@ -131,4 +150,5 @@ if __name__ == "__main__":
             class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
-                confusion_matrix(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
+                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev,
+                                                argp.plot_matrix)
