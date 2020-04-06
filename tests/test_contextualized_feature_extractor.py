@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 import unittest
 import pandas as pd
-from scripts import BertExtractor
+from utils import BertExtractor
 
 
 class BertExtractorTest(unittest.TestCase):

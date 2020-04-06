@@ -1,14 +1,15 @@
 import unittest
 import json
-from scripts import TransferCompClassifier, TransweighPretrain, TransweighTransferRanker, TransweighTwoWordClassifier, \
-    training_utils
+from ranking_models import TransweighPretrain, TransweighTransferRanker
+from classification_models import TransweighTwoWordClassifier, TransferCompClassifier
+from utils import training_utils
 import math
 import torch
 from torch import optim
 import pathlib
 import numpy as np
-from scripts import multi_class_cross_entropy, get_loss_cosine_distance
-from scripts import PretrainCompmodelDataset
+from utils.loss_functions import multi_class_cross_entropy, get_loss_cosine_distance
+from utils.data_loader import PretrainCompmodelDataset
 from torch.utils.data import DataLoader
 
 

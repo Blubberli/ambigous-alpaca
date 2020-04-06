@@ -3,8 +3,8 @@ import unittest
 import json
 import numpy as np
 from torch.utils.data import DataLoader
-from scripts import training_utils
-from scripts.data_loader import SimplePhraseDataset
+from utils import training_utils
+from utils import SimplePhraseDataset
 
 
 class DataLoaderTest(unittest.TestCase):

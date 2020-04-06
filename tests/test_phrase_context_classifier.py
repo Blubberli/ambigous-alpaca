@@ -4,8 +4,10 @@ import pathlib
 from torch import optim
 import unittest
 from torch.utils.data import DataLoader
-from scripts import PhraseContextClassifier, PhraseAndContextDatasetStatic
-from scripts import multi_class_cross_entropy
+from classification_models import PhraseContextClassifier
+from utils import PhraseAndContextDatasetStatic
+from utils.data_loader import extract_all_labels, create_label_encoder
+from utils.loss_functions import multi_class_cross_entropy
 
 
 class PhraseContextClassifierTest(unittest.TestCase):
@@ -19,9 +21,15 @@ class PhraseContextClassifierTest(unittest.TestCase):
         self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/test.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-
-        self._static_dataset = PhraseAndContextDatasetStatic(self._data_path, self._embedding_path,
-                                                             tokenizer_model="de_CMC")
+        labels = extract_all_labels(training_data=self._data_path,
+                                    validation_data=self._data_path,
+                                    test_data=self._data_path,
+                                    separator="\t", label="label")
+        label_encoder = create_label_encoder(all_labels=labels)
+        self._static_dataset = PhraseAndContextDatasetStatic(data_path=self._data_path, embedding_path=self._embedding_path,
+                                                             tokenizer_model="de_CMC", context="context",
+                                                             phrase="phrase", label_encoder=label_encoder,
+                                                             label="label", separator="\t")
         self.model = PhraseContextClassifier(embedding_dim=300, hidden_size=200, dropout_rate=0.0,
                                              forward_hidden_dim=100, label_nr=3, num_layers=1)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.1)
@@ -39,7 +47,7 @@ class PhraseContextClassifierTest(unittest.TestCase):
         for batch in data_loader:
             # context is a list of list of word embeddings
             batch["device"] = "cpu"
-            out = self.model(batch, True).squeeze()
+            out = self.model(batch).squeeze()
             loss = multi_class_cross_entropy(out, batch["l"])
             loss.backward()
             self.optimizer.step()

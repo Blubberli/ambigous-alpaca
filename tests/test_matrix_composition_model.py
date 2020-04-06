@@ -5,11 +5,12 @@ import numpy as np
 import json
 import torch
 from torch import optim
-from scripts.data_loader import PretrainCompmodelDataset
+from utils import PretrainCompmodelDataset
 from torch.utils.data import DataLoader
-from scripts import MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier, MatrixTransferRanker
-from scripts import training_utils
-from scripts import multi_class_cross_entropy, get_loss_cosine_distance
+from classification_models import MatrixTwoWordClassifier, MatrixTransferClassifier
+from ranking_models import MatrixTransferRanker, MatrixPretrain
+from utils import training_utils
+from utils.loss_functions import multi_class_cross_entropy, get_loss_cosine_distance
 
 
 class MatrixCompositionModelTest(unittest.TestCase):
