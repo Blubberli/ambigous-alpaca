@@ -63,15 +63,18 @@ def class_performance_classification(path_predictions, gold_loader, dataset, eva
     preds = np.load(path_predictions)
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
-    report = classification_report(gold, preds, output_dict=True)
+    set_labels = set(gold)
+    report = classification_report(gold, preds, labels=list(set_labels),  output_dict=True)
     encoder = dataset.label_encoder
     f = open(eval_path, "w")
     for k, v in report.items():
         if k.isdigit():
             label = encoder.inverse_transform([int(k)])
-            f.write(str(label) + "\t" + str(round(v, 3)) + "\n")
+            scores = {type_score:round(score, 3) for type_score, score in v.items()}
+            f.write(str(label) + "\t" + str(scores) + "\n")
         else:
-            f.write(str(k) + "\t" + str(round(v, 3)) + "\n")
+            scores = {type_score: round(score, 3) for type_score, score in v.items()}
+            f.write(str(k) + "\t" + str(scores) + "\n")
 
     f.close()
 
