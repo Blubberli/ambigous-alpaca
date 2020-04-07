@@ -51,19 +51,27 @@ def class_performance_ranks(ranker, eval_path):
     eval_file.close()
 
 
-def class_performance_classification(path_results, gold_loader, dataloader, eval_path):
-    preds = np.load(path_results)
+def class_performance_classification(path_predictions, gold_loader, dataset, eval_path):
+    """
+    this method calculates precision,recall and f1 for each class separately.
+    the results are written to a file
+    :param path_predictions: path to saved predictions
+    :param gold_loader: the dataloader to generate the gold labels
+    :param dataset: the dataset object to call the encoder of the labels
+    :param eval_path: the path of the file to which to save the scores
+    """
+    preds = np.load(path_predictions)
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
     report = classification_report(gold, preds, output_dict=True)
-    encoder = dataloader.label_encoder
+    encoder = dataset.label_encoder
     f = open(eval_path, "w")
     for k, v in report.items():
         if k.isdigit():
             label = encoder.inverse_transform([int(k)])
-            f.write(str(label) + "\t" + str(v) + "\n")
+            f.write(str(label) + "\t" + str(round(v, 3)) + "\n")
         else:
-            f.write(str(k) + "\t" + str(v) + "\n")
+            f.write(str(k) + "\t" + str(round(v, 3)) + "\n")
 
     f.close()
 
@@ -80,11 +88,19 @@ def plot_confusion_matrix(confusion_matrix, save_path):
     plt.savefig(save_path, dpi=300)
 
 
-def confusion_matrix_classification(path_results, gold_loader, dataloader, conf_path, plot):
-    preds = np.load(path_results)
+def confusion_matrix_classification(path_predictions, gold_loader, dataset, conf_path, plot):
+    """
+    this method generates a confusion matrix for the predicted and gold labels
+    :param path_predictions: path to saved predictions
+    :param gold_loader: the dataloader to generate the gold labels
+    :param dataset: the dataset object to call the encoder of the labels
+    :param conf_path: path to which to save the confusion matrix
+    :param plot: if true a plot of the confusion matrix is also saved
+    """
+    preds = np.load(path_predictions)
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
-    encoder = dataloader.label_encoder
+    encoder = dataset.label_encoder
     gold_l = encoder.inverse_transform(gold)
     preds_l = encoder.inverse_transform(preds)
     labels = np.unique(np.concatenate((preds_l, gold_l), axis=0))
@@ -138,17 +154,20 @@ if __name__ == "__main__":
     else:
 
         if config["eval_on_test"]:
-            class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
-            class_performance_classification(prediction_path_test, test_loader, dataset_test, eval_path_test)
+            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader, dataset=dataset_valid, eval_path=eval_path_dev)
+            class_performance_classification(path_predictions=prediction_path_test, gold_loader=test_loader, dataset= dataset_test,eval_path= eval_path_test)
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
                 conf_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_test.csv"))
-                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev)
-                confusion_matrix_classification(prediction_path_test, test_loader, dataset_test, conf_path_test)
+                confusion_matrix_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader,
+                                                dataset=dataset_valid, conf_path=conf_path_dev, plot=argp.plot_matrix)
+                confusion_matrix_classification(path_predictions=prediction_path_test, gold_loader=test_loader,
+                                                dataset=dataset_test, conf_path=conf_path_test, plot=argp.plot_matrix)
 
         else:
-            class_performance_classification(prediction_path_dev, valid_loader, dataset_valid, eval_path_dev)
+            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader, dataset=dataset_valid, eval_path=eval_path_dev)
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
-                confusion_matrix_classification(prediction_path_dev, valid_loader, dataset_valid, conf_path_dev,
-                                                argp.plot_matrix)
+                confusion_matrix_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader,
+                                                dataset=dataset_valid, conf_path=conf_path_dev,
+                                                plot=argp.plot_matrix)
