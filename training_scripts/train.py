@@ -7,10 +7,10 @@ from torch import optim
 import numpy as np
 from sklearn.metrics import f1_score
 import logging.config
-from scripts.logger_config import create_config
+from utils.logger_config import create_config
 from torch.utils.data import DataLoader
-from scripts.training_utils import init_classifier, get_datasets, convert_logits_to_binary_predictions
-from scripts.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
+from utils.training_utils import init_classifier, get_datasets, convert_logits_to_binary_predictions
+from utils.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 
 
 def train_binary(config, train_loader, valid_loader, model_path, device):

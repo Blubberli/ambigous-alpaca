@@ -1,9 +1,9 @@
 import unittest
 import torch
 import numpy as np
-from scripts.data_loader import extract_all_words, PretrainCompmodelDataset
+from utils.data_loader import extract_all_words, PretrainCompmodelDataset
 from torch.utils.data import DataLoader
-from scripts.ranking import Ranker
+from training_scripts.ranking import Ranker
 
 
 class RankingTest(unittest.TestCase):
@@ -29,7 +29,6 @@ class RankingTest(unittest.TestCase):
 
     def test_all_ranks(self):
         ranker = Ranker(path_to_predictions=self.predictions,
-                        path_to_ranks="data_pretraining/ranks.txt",
                         embedding_path=self.embedding_path, all_labels=self.labels,
                         data_loader=self.data_loader, max_rank=14, y_label="phrase")
         ranks = ranker._ranks
@@ -37,22 +36,20 @@ class RankingTest(unittest.TestCase):
 
     def test_bad_prediction(self):
         ranker = Ranker(path_to_predictions=self.predictions,
-                        path_to_ranks=self.ranks_path,
                         embedding_path=self.embedding_path, all_labels=self.labels,
                         data_loader=self.data_loader, max_rank=5, y_label="phrase")
         bad_prediction = torch.from_numpy(np.array([0.0, 1.0]))
         ranker._predicted_embeddings[2] = bad_prediction
-        ranks = ranker.get_target_based_rank()
+        ranks, _, _ = ranker.get_target_based_rank()
         np.testing.assert_equal(ranks[2], 5)
 
     def test_close_prediction(self):
         ranker = Ranker(path_to_predictions=self.predictions,
-                        path_to_ranks=self.ranks_path,
                         embedding_path=self.embedding_path, all_labels=self.labels,
                         data_loader=self.data_loader, max_rank=5, y_label="phrase")
         close_prediction = torch.from_numpy(np.array([0.7030, 0.668]))
         ranker._predicted_embeddings[2] = close_prediction / np.linalg.norm(close_prediction)
-        ranks = ranker.get_target_based_rank()
+        ranks, _, _ = ranker.get_target_based_rank()
         np.testing.assert_equal(ranks[2], 2)
 
     def test_ranks(self):
@@ -61,13 +58,12 @@ class RankingTest(unittest.TestCase):
 
         correct_ranks = [1, 1, 5, 6]
         ranker = Ranker(path_to_predictions=self.predictions,
-                        path_to_ranks=self.ranks_path,
                         embedding_path=self.embedding_path,
                         all_labels=self.labels,
                         data_loader=self.data_loader, max_rank=6, y_label="phrase")
         ranker._predicted_embeddings = predictions
 
-        ranks = ranker.get_target_based_rank()
+        ranks, _, _ = ranker.get_target_based_rank()
         np.testing.assert_equal(ranks, correct_ranks)
 
     def test_quartiles_uneven(self):

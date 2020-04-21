@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.functional import F
-from scripts import transweigh
+from utils.composition_functions import transweigh
 
 
 class TransweighPretrain(nn.Module):

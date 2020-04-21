@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scripts import tw_transform, transweigh_weight, concat
+from utils.composition_functions import tw_transform, transweigh_weight, concat
 import unittest
 
 
@@ -50,7 +50,8 @@ class CompositionFunctionsTest(unittest.TestCase):
         """
         Tests that the t transformations are correctly performed.
         If [[A B C D E F]] is the input matrix with a size 1x6 (1 is the batch size, 6 the embedding dimension) and
-        [[[g h i]   the transformation tensor with two transformation matrice (2 x 6 x 3) then an element-wise multiplication
+        [[[g h i]   the transformation tensor with two transformation matrice (2 x 6 x 3) then an element-wise
+        multiplication
           [j k l]   along the second axis of each tensor will be performed followed by a sum reduction which reduces
           [m n p]   the dimension 6 in each and results in a tensor of 1 x 3
           [o w ö]   first transformation: [(A*g + B*j + C*m + D*o ...), (A*h + B*k + C*n...), (A*i + B*l + C*p...)]
@@ -102,9 +103,3 @@ class CompositionFunctionsTest(unittest.TestCase):
         expected_p = np.array([[1, 1, 1, 1, 0, 0]])
         p = concat(self.u, self.v, axis=1)
         np.testing.assert_allclose(p, expected_p)
-
-    def test_concat_fails(self):
-        """
-        Test whether two batches of size [1x3] and [1x3] can be concatenated to retrieve a batch of [1x6]
-        """
-        p = concat(self.u, np.array([1, 0]), axis=1)

@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scripts import multi_class_cross_entropy, binary_class_cross_entropy
+from utils.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 import unittest
 
 

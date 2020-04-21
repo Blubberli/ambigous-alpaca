@@ -1,5 +1,5 @@
 import unittest
-from scripts import StaticEmbeddingExtractor
+from utils import StaticEmbeddingExtractor
 import numpy as np
 
 

@@ -1,10 +1,11 @@
 import numpy as np
 import torch
-from scripts import BasicTwoWordClassifier
+import json
+from classification_models import BasicTwoWordClassifier
 import unittest
-from scripts import SimplePhraseStaticDataset
 import pathlib
 from torch.utils.data import DataLoader
+from utils import training_utils
 
 
 class BasicTwoWordClassifierTest(unittest.TestCase):
@@ -15,10 +16,10 @@ class BasicTwoWordClassifierTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/test.txt")
-        self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
-            "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-        self._static_dataset = SimplePhraseStaticDataset(self._data_path, self._embedding_path)
+        config_static = str(pathlib.Path(__file__).parent.absolute().joinpath("test_configs/simple_phrase_config.json"))
+        with open(config_static, 'r') as f:
+            self.config_static = json.load(f)
+        _, _, self._static_dataset = training_utils.get_datasets(self.config_static)
         self._data = DataLoader(self._static_dataset, batch_size=2)
         self._batch = next(iter(self._data))
         self._batch["device"] = "cpu"

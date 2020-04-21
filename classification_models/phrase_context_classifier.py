@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import scripts.composition_functions as comp_functions
+import utils.composition_functions as comp_functions
 import torch.nn.functional as F
 
 

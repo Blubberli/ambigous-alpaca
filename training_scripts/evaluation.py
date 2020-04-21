@@ -2,10 +2,10 @@ import argparse
 import json
 import numpy as np
 from torch.utils.data import DataLoader
-from scripts.ranking import Ranker
-from scripts.training_utils import get_datasets
+from training_scripts import Ranker
+from utils.training_utils import get_datasets
 from collections import defaultdict
-from scripts.data_loader import extract_all_labels
+from utils.data_loader import extract_all_labels
 from sklearn.metrics import classification_report, confusion_matrix
 from pathlib import Path
 import pandas as pd

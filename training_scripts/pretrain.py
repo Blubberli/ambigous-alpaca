@@ -3,16 +3,16 @@ import time
 import json
 from pathlib import Path
 import logging.config
-from scripts.logger_config import create_config
+from utils.logger_config import create_config
 import numpy as np
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
-from scripts.training_utils import init_classifier, get_datasets
-from scripts.data_loader import extract_all_labels, extract_all_words
-from scripts.loss_functions import get_loss_cosine_distance
+from utils.training_utils import init_classifier, get_datasets
+from utils.data_loader import extract_all_labels, extract_all_words
+from utils.loss_functions import get_loss_cosine_distance
 import ffp
-from scripts.ranking import Ranker
+from training_scripts.ranking import Ranker
 
 
 def pretrain(config, train_loader, valid_loader, model_path, device):

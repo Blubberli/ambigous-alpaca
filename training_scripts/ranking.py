@@ -2,7 +2,7 @@ import math
 import numpy as np
 import torch
 import torch.nn.functional as F
-from scripts import StaticEmbeddingExtractor
+from utils import StaticEmbeddingExtractor
 
 
 class Ranker:
