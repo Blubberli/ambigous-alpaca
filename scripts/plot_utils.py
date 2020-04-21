@@ -24,7 +24,7 @@ def plot_learning_curves(training_losses, validation_losses, save_path):
     plt.savefig(save_path, dpi=400)
 
 
-def plot_class_distribution(train_labels, test_labels, save_path):
+def plot_class_distribution(train_labels, save_path, test_labels=None, test_label=None):
     """
     Given a list of training labels and a list of validation labels for a dataset, this method creates a histogram
     that shows the class distribution of each split in the same plot. The colors are transparent so that both
@@ -32,22 +32,26 @@ def plot_class_distribution(train_labels, test_labels, save_path):
     :param train_labels: a list containing the label for each training instance
     :param test_labels: a list containing the label for each test instance
     :param save_path: the path the plot is saved to
+    :param test_label: the name of the test split (e.g. test or validation) as a String
     """
     unique, counts = np.unique(train_labels, return_counts=True)
     plt.bar(unique, counts, color='red', alpha=0.5)
     max1 = max(counts)
-    unique, counts = np.unique(test_labels, return_counts=True)
-    plt.bar(unique, counts, color='orange', alpha=0.5)
-    max2 = max(counts)
-    train_dist = mpatches.Patch(color='red', alpha=0.5, label='train')
-    test_dist = mpatches.Patch(color='orange', alpha=0.5, label='test')
 
-    plt.legend(handles=[train_dist, test_dist])
+    if test_labels:
+        unique, counts = np.unique(test_labels, return_counts=True)
+        plt.bar(unique, counts, color='orange', alpha=0.5)
+        max2 = max(counts)
+        train_dist = mpatches.Patch(color='red', alpha=0.5, label='train')
+        test_dist = mpatches.Patch(color='orange', alpha=0.5, label=test_label)
+        plt.legend(handles=[train_dist, test_dist])
+        plt.yticks(np.arange(0, max(max1, max2), step=25))
+    else:
+        plt.yticks(np.arange(0, max1, step=25))
     plt.title('Class Frequency')
     plt.xlabel('Class')
     plt.ylabel('Frequency')
     plt.xticks(rotation=90, fontsize=5)
-    plt.yticks(np.arange(0, max(max1, max2), step=25))
     plt.tight_layout()
     plt.savefig(save_path, dpi=400)
 
@@ -57,7 +61,6 @@ if __name__ == '__main__':
     argp.add_argument("path_to_config", type=str)
     argp.add_argument("save_path", type=str)
     argp.add_argument("--test_data", default=False, action='store_true')
-    argp.add_argument("--test_path", type=str)
     argp = argp.parse_args()
     with open(argp.path_to_config, 'r') as f:
         config = json.load(f)
@@ -74,7 +77,8 @@ if __name__ == '__main__':
     valid_labels = next(iter(valid_loader))["l"].numpy()
     valid_labels = label_encoder.inverse_transform(valid_labels)
 
-    plot_class_distribution(train_labels=train_labels, test_labels=valid_labels, save_path=argp.save_path)
+    plot_class_distribution(train_labels=train_labels, test_labels=valid_labels,
+                            save_path=argp.save_path + "_validation.png")
 
     if argp.test_data:
         # load test data in batches
@@ -82,4 +86,5 @@ if __name__ == '__main__':
         test_labels = next(iter(test_loader))["l"].numpy()
         test_labels = label_encoder.inverse_transform(test_labels)
         assert argp.test_path is not None, "please specify a path to save the plot"
-        plot_class_distribution(train_labels=train_labels, test_labels=test_labels, save_path=argp.test_path)
+        plot_class_distribution(train_labels=train_labels, test_labels=test_labels,
+                                save_path=argp.save_path + "_test.png")
