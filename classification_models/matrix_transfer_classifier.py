@@ -1,18 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import scripts.composition_functions as comp_functions
+import utils.composition_functions as comp_functions
 
 
-class MatrixTwoWordClassifier(nn.Module):
+class MatrixTransferClassifier(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, label_nr, dropout_rate, normalize_embeddings,
+    def __init__(self, input_dim, hidden_dim, label_nr, dropout_rate, normalize_embeddings, pretrained_model,
                  add_single_words=False):
         """
         this class includes a two-word classifier with one hidden layer and one output layer.
         the classifier first combines the two words with a matrix that will be trained during training and then uses
         the
-        composed representation and eventually the single word representations as input to the classification layer
+        composed representation and eventually the single word representations as input to the classification layer.
+        The weight and bias of the composition model are loaded from a pretrained model and then trained further.
         :param input_dim: embedding size
         :param hidden_dim: dimension of hidden layer of classifier
         :param label_nr: number of classes to predict
@@ -20,9 +21,17 @@ class MatrixTwoWordClassifier(nn.Module):
         :param normalize_embeddings: whether the composed representation should be normalized to unit length
         :param add_single_words: if True, the classifier will get a concatenation of the single word embeddings with
         the composed representation, otherwise the composed representation only
+        :param pretrained_model: a pretrained torch model of the type (MatrixTwoWordClassifier)
         """
-        super(MatrixTwoWordClassifier, self).__init__()
+        super(MatrixTransferClassifier, self).__init__()
+        self._pretrained_model = torch.load(pretrained_model)
+        # init matrix model with pretrained weights
+        self._pretrained_w = nn.Parameter(self.pretrained_model['_matrix_layer.weight'], requires_grad=True)
+        self._pretrained_b = nn.Parameter(self.pretrained_model['_matrix_layer.bias'], requires_grad=True)
         self._matrix_layer = nn.Linear(input_dim * 2, input_dim)
+        self._matrix_layer.weight = self._pretrained_w
+        self._matrix_layer.bias = self._pretrained_b
+
         forward_dim = input_dim
         self._add_single_words = add_single_words
         self._normalize_embeddings = normalize_embeddings
@@ -34,8 +43,8 @@ class MatrixTwoWordClassifier(nn.Module):
 
     def forward(self, batch):
         """
-        this function takes two words, combines them via the matrix composition function send them through a
-        nonlinear forward layer, eventually after concatenating the single word embeddings.
+        this function takes two words, concatenates them and applies a non-linear matrix transformation (hidden layer)
+        Its output is then fed to an output layer. Then it returns the concatenated and transformed vectors.
         :param word1: the first word of size batch_size x embedding size
         :param word2: the first word of size batch_size x embedding size
         :return: the raw label scores
@@ -90,3 +99,7 @@ class MatrixTwoWordClassifier(nn.Module):
     @property
     def add_single_words(self):
         return self._add_single_words
+
+    @property
+    def pretrained_model(self):
+        return self._pretrained_model

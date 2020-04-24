@@ -1,0 +1,8 @@
+# single task classifier
+from classification_models.basic_twoword_classifier import BasicTwoWordClassifier
+from classification_models.matrix_twoword_classifier import MatrixTwoWordClassifier
+from classification_models.transweigh_twoword_classifier import TransweighTwoWordClassifier
+from classification_models.phrase_context_classifier import PhraseContextClassifier
+# transfer classifier
+from classification_models.matrix_transfer_classifier import MatrixTransferClassifier
+from classification_models.transfer_comp_classifier import TransferCompClassifier

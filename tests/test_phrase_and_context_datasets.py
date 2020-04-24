@@ -2,7 +2,7 @@ import unittest
 import pathlib
 import json
 import numpy as np
-from scripts import training_utils
+from utils import training_utils
 from torch.utils.data import DataLoader
 
 

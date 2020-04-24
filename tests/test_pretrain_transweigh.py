@@ -4,10 +4,10 @@ import pathlib
 import numpy as np
 import torch
 from torch import optim
-from scripts import loss_functions
+from utils import loss_functions
 import torch.nn.functional as F
-from scripts import TransweighPretrain
-from scripts.data_loader import PretrainCompmodelDataset
+from ranking_models import TransweighPretrain
+from utils.data_loader import PretrainCompmodelDataset
 from torch.utils.data import DataLoader
 
 
@@ -22,7 +22,8 @@ class PretrainTransweighTest(unittest.TestCase):
         self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_pretraining/train.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-        self._pretrain_dataset = PretrainCompmodelDataset(self._data_path, self._embedding_path)
+        self._pretrain_dataset = PretrainCompmodelDataset(self._data_path, self._embedding_path, head="head",
+                                                          mod="modifier", phrase="phrase", separator=" ")
 
         modifier_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         head_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
@@ -93,7 +94,8 @@ class PretrainTransweighTest(unittest.TestCase):
         np.testing.assert_almost_equal(np.linalg.norm(composed_phrase[0].data), 1.0)
 
     def test_dataloader(self):
-        """Test whether the pretrained dataset holds a vector for each instance in batch that has the correct dimension"""
+        """Test whether the pretrained dataset holds a vector for each instance in batch that has the correct
+        dimension"""
         dataloader = DataLoader(self._pretrain_dataset, batch_size=3, shuffle=True, num_workers=2)
 
         data = next(iter(dataloader))

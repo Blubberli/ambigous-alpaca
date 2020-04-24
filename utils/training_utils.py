@@ -1,12 +1,12 @@
 import torch
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
-    PhraseContextClassifier, TransweighPretrain, MatrixTwoWordClassifier, MatrixPretrain, MatrixTransferClassifier, \
-    MatrixTransferRanker, TransweighTransferRanker
+from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
+    PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
+from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker
 
-from scripts.data_loader import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
+from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
 
-from scripts.data_loader import create_label_encoder, extract_all_labels
+from utils.data_loader import create_label_encoder, extract_all_labels
 
 
 def init_classifier(config):

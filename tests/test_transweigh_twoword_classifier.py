@@ -3,8 +3,8 @@ import math
 import torch
 from torch import optim
 import unittest
-from scripts import TransweighTwoWordClassifier
-from scripts import binary_class_cross_entropy, multi_class_cross_entropy
+from classification_models import TransweighTwoWordClassifier
+from utils.loss_functions import binary_class_cross_entropy, multi_class_cross_entropy
 
 
 class TransweighTwoWordClassifierTest(unittest.TestCase):

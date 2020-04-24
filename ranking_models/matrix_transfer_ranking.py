@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import scripts.composition_functions as comp_functions
+import utils.composition_functions as comp_functions
 
 
 class MatrixTransferRanker(nn.Module):

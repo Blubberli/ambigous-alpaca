@@ -2,7 +2,8 @@ import unittest
 import json
 import pathlib
 import numpy as np
-from scripts import BasicTwoWordClassifier, TransweighTwoWordClassifier, training_utils
+from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier
+from utils import training_utils
 
 
 class TrainingUtilsTest(unittest.TestCase):

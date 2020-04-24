@@ -6,7 +6,7 @@ import torch
 from torch import nn
 import somajo
 import numpy as np
-from scripts import BertExtractor, StaticEmbeddingExtractor
+from utils import BertExtractor, StaticEmbeddingExtractor
 
 
 def create_label_encoder(all_labels):
@@ -44,7 +44,6 @@ class SimplePhraseDataset(ABC, Dataset):
         self._label_encoder = label_encoder
         self._phrases = list(self.data[phrase])
         self._labels = list(self.data[label])
-
         self._labels = label_encoder.transform(self.labels)
 
         self._word1 = [phrase.split(" ")[0] for phrase in self.phrases]
