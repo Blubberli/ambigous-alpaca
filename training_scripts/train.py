@@ -9,6 +9,7 @@ from sklearn.metrics import f1_score
 import logging.config
 from utils.logger_config import create_config
 from torch.utils.data import DataLoader
+from utils.plot_utils import plot_learning_curves
 from utils.training_utils import init_classifier, get_datasets, convert_logits_to_binary_predictions
 from utils.loss_functions import multi_class_cross_entropy, binary_class_cross_entropy
 
@@ -32,6 +33,9 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
     train_loss = 0.0
     best_accuracy = 0.0
     best_f1 = 0.0
+    total_train_losses = []
+    total_val_losses = []
+    early_stopping_criterion = config["validation_metric"]
 
     for epoch in range(1, config["num_epochs"] + 1):
         # training loop over all batches
@@ -41,7 +45,6 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         valid_losses = []
         valid_accuracies = []
         valid_f1_scores = []
-        early_stopping_criterion = config["validation_metric"]
 
         # for word1, word2, labels in train_loader:
         for batch in train_loader:
@@ -70,6 +73,8 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         valid_loss = np.average(valid_losses)
         valid_accuracy = np.average(valid_accuracies)
         valid_f1 = np.average(valid_f1_scores)
+        total_val_losses.append(valid_loss)
+        total_train_losses.append(train_loss)
         # stop when f1 score is the highest
         if early_stopping_criterion == "f1":
             if valid_f1 > best_f1 - tolerance:
@@ -104,6 +109,9 @@ def train_binary(config, train_loader, valid_loader, model_path, device):
         "best f1 score: %5f"
         "best validation accuracy: %.5f " %
         (epoch, train_loss, best_epoch, lowest_loss, best_accuracy, best_f1))
+    if config["plot_curves"]:
+        path = str(Path(config["model_path"]).joinpath(save_name + "_learning_curves.png"))
+        plot_learning_curves(training_losses=total_train_losses, validation_losses=total_val_losses, save_path=path)
 
 
 def train_multiclass(config, train_loader, valid_loader, model_path, device):
@@ -126,6 +134,8 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
     best_accuracy = 0.0
     best_f1 = 0.0
     early_stopping_criterion = config["validation_metric"]
+    total_train_losses = []
+    total_val_losses = []
     for epoch in range(1, config["num_epochs"] + 1):
         # training loop over all batches
         model.train()
@@ -161,6 +171,8 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
         valid_loss = np.average(valid_losses)
         valid_accuracy = np.average(valid_accuracies)
         valid_f1 = np.average(valid_f1_scores)
+        total_train_losses.append(train_loss)
+        total_val_losses.append(valid_loss)
 
         # stop when f1 score is the highest
         if early_stopping_criterion == "f1":
@@ -196,6 +208,9 @@ def train_multiclass(config, train_loader, valid_loader, model_path, device):
         "best validation accuracy: %.5f, best f1 score %.5f" %
 
         (epoch, train_loss, best_epoch, lowest_loss, best_accuracy, best_f1))
+    if config["plot_curves"]:
+        path = str(Path(config["model_path"]).joinpath(save_name + "_learning_curves.png"))
+        plot_learning_curves(training_losses=total_train_losses, validation_losses=total_val_losses, save_path=path)
 
 
 def predict(test_loader, model, config, device):  # for test set
@@ -246,7 +261,7 @@ def get_accuracy(predictions, labels):
 
 
 def save_predictions(predictions, path):
-    np.save(file=path, arr=np.array(predictions), allow_pickle=True)
+    np.save(file=path, arr=np.array(presdictions), allow_pickle=True)
 
 
 if __name__ == "__main__":
@@ -279,7 +294,6 @@ if __name__ == "__main__":
     logger.info(str(config))
     logger.info("Training %s model with %s embeddings. \n Logging to %s \n Save model to %s" % (
         config["model"]["type"], config["feature_extractor"], log_file, model_path))
-
 
     # set random seed
     np.random.seed(config["seed"])
