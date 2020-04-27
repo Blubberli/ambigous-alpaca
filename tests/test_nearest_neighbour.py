@@ -4,8 +4,7 @@ import numpy as np
 from utils.data_loader import extract_all_words, PretrainCompmodelDataset
 from torch.utils.data import DataLoader
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
-from utils import StaticEmbeddingExtractor
-
+from utils import StaticEmbeddingExtractor, BertExtractor
 
 class RankingTest(unittest.TestCase):
     """
@@ -23,6 +22,7 @@ class RankingTest(unittest.TestCase):
                                         "data_pretraining/test.txt", separator=" ", head="head", modifier="modifier",
                                         phrase="phrase")
         self.static_extractor = StaticEmbeddingExtractor(self.embedding_path)
+        self.contextualized_extractor = BertExtractor('bert-base-german-cased', 20, False, 4)
 
         dataset_test = PretrainCompmodelDataset(data_path="data_pretraining/test.txt",
                                                 embedding_path=self.embedding_path, separator=" ",
@@ -65,6 +65,16 @@ class RankingTest(unittest.TestCase):
                                        data_loader=self.data_loader, max_rank=6, y_label="phrase")
         ranker._predicted_embeddings = predictions
         ranks, _, _ = ranker.get_target_based_rank()
+        np.testing.assert_equal(ranks, correct_ranks)
+
+    def test_nearestneighbour_contextualized(self):
+        predictions = "embeddings/bert_predictions.npy"
+        correct_ranks = [4, 5, 3, 3]
+        ranker = NearestNeigbourRanker(path_to_predictions=predictions,
+                                       embedding_extractor=self.contextualized_extractor,
+                                       all_labels=self.labels,
+                                       data_loader=self.data_loader, max_rank=6, y_label="phrase")
+        ranks = ranker.ranks
         np.testing.assert_equal(ranks, correct_ranks)
 
     def test_precicion_at_rank(self):
