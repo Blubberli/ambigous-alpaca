@@ -1,7 +1,8 @@
 import torch
 from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
     PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
-from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker
+from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker, \
+    TransweighJointRanker
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
@@ -78,6 +79,15 @@ def init_classifier(config):
         classifier = MatrixPretrain(input_dim=config["model"]["input_dim"],
                                     dropout_rate=config["model"]["dropout"],
                                     normalize_embeddings=config["model"]["normalize_embeddings"])
+    if config["model"]["type"] == "joint_ranking":
+        assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
+            1] == 1.0, "the task weights have to sum to 1"
+        classifier = TransweighJointRanker(input_dim=config["model"]["input_dim"],
+                                           dropout_rate=config["model"]["dropout"],
+                                           normalize_embeddings=config["model"]["normalize_embeddings"],
+                                           transformations=config["model"]["transformations"],
+                                           rep1_weight=config["model"]["task_weights"][0],
+                                           rep2_weight=config["model"]["task_weights"][1])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier

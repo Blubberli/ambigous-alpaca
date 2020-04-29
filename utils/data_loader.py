@@ -394,3 +394,30 @@ class PretrainCompmodelDataset(Dataset):
     @property
     def samples(self):
         return self._samples
+
+
+class MultiRankingDataset(Dataset):
+    """
+    This dataset can be used to combine two different dataset into one. The datasets need to be of the same type.
+    """
+    def __init__(self, dataset_1, dataset_2):
+        assert type(dataset_1) == type(dataset_2), "cannot combine two datasets of different types"
+        self._dataset_1 = dataset_1
+        self._dataset_2 = dataset_2
+
+    def __len__(self):
+        return len(self.dataset_2)
+
+    def __getitem__(self, idx):
+        """Returns a batch for each dataset"""
+        task1 = self.dataset_1[idx]
+        task2 = self.dataset_2[idx]
+        return task1, task2
+
+    @property
+    def dataset_1(self):
+        return self._dataset_1
+
+    @property
+    def dataset_2(self):
+        return self._dataset_2
