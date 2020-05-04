@@ -36,7 +36,7 @@ def pretrain(pretrain_loader, model, optimizer):
     return model, optimizer
 
 
-def train(config, pretrain_loader, train_loader, valid_loader_1, valid_loader_2, model_path, device):
+def train(config, pretrain_1, pretrain_2, train_loader, valid_loader_1, valid_loader_2, model_path, device):
     """
     This method trains a composition model jointly on two tasks. On top of that, the model is pretrained on the more
     general / harder task.
@@ -58,7 +58,17 @@ def train(config, pretrain_loader, train_loader, valid_loader_1, valid_loader_2,
     best_epoch = 1
     epoch = 1
     train_loss = 0.0
-    model, optimizer = pretrain(pretrain_loader, model, optimizer)
+    if pretrain_1:
+        # use one training set for pretraining
+        pretrain_loader = DataLoader(dataset_train_1, batch_size=config_1["iterator"]["batch_size"],
+                                     shuffle=True,
+                                     num_workers=0)
+        model, optimizer = pretrain(pretrain_loader, model, optimizer)
+    if pretrain_2:
+        pretrain_loader = DataLoader(dataset_train_2, batch_size=config_1["iterator"]["batch_size"],
+                                     shuffle=True,
+                                     num_workers=0)
+        model, optimizer = pretrain(pretrain_loader, model, optimizer)
     for epoch in range(1, config["num_epochs"] + 1):
         model.train()
         train_losses = []
@@ -126,7 +136,8 @@ def predict(test_loader, model, device):
     :param test_loader: dataloader torch object with test- or validation data
     :param model: trained model
     :param device: the device
-    :return: predictions and losses for the learned attribute and the final composed representation, the original phrases
+    :return: predictions and losses for the learned attribute and the final composed representation, the original
+    phrases
     """
     test_loss_att = []
     test_loss_final = []
@@ -218,6 +229,8 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("path_to_config_1")
     argp.add_argument("path_to_config_2")
+    argp.add_argument("--pretrain_dataset_1", default=False, action='store_true')
+    argp.add_argument("--pretrain_dataset_2", default=False, action='store_true')
     argp = argp.parse_args()
 
     with open(argp.path_to_config_1, 'r') as f:
@@ -277,11 +290,6 @@ if __name__ == "__main__":
                               batch_size=config_1["iterator"]["batch_size"],
                               shuffle=True,
                               num_workers=0)
-    # use one training set for pretraining
-    pretrain_loader = DataLoader(dataset_train_1, batch_size=config_1["iterator"]["batch_size"],
-                                 shuffle=True,
-                                 num_workers=0)
-
     # load validation data in batches
     valid_loader_1 = torch.utils.data.DataLoader(dataset_valid_1,
                                                  batch_size=config_1["iterator"]["batch_size"],
@@ -293,7 +301,8 @@ if __name__ == "__main__":
     model = None
     y_label = None
     # train
-    train(config=config_1, pretrain_loader=pretrain_loader, train_loader=train_loader, valid_loader_1=valid_loader_1,
+    train(config=config_1, pretrain_1=argp.pretrain_dataset_1, pretrain_2=argp.pretrain_dataset_2,
+          train_loader=train_loader, valid_loader_1=valid_loader_1,
           valid_loader_2=valid_loader_2, device=device, model_path=model_path)
     # test and & evaluate
     logger.info("Loading best model from %s", model_path)

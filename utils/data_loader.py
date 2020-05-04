@@ -406,7 +406,9 @@ class MultiRankingDataset(Dataset):
         self._dataset_2 = dataset_2
 
     def __len__(self):
-        return len(self.dataset_2)
+        if len(self.dataset_2) < len(self.dataset_1):
+            return len(self.dataset_2)
+        return len(self.dataset_1)
 
     def __getitem__(self, idx):
         """Returns a batch for each dataset"""
