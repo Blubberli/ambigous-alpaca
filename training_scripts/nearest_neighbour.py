@@ -8,7 +8,7 @@ from training_scripts.ranking import Ranker
 
 class NearestNeigbourRanker:
 
-    def __init__(self, path_to_predictions, embedding_path, data_loader, all_labels, max_rank, y_label):
+    def __init__(self, path_to_predictions, embedding_extractor, data_loader, all_labels, max_rank, y_label):
         """
         This class stores the functionality to rank label representations with respect to a predicted representation and
         to compute the precision at certain ranks or use the closes predicted label as final prediction.
@@ -24,16 +24,18 @@ class NearestNeigbourRanker:
         """
         # load composed predictions
         self._predicted_embeddings = np.load(path_to_predictions, allow_pickle=True)
-        self._embeddings = StaticEmbeddingExtractor(embedding_path)
+        self._embeddings = embedding_extractor
         data = next(iter(data_loader))
         # the correct labels are stored here
         self._true_labels = data[y_label]
-        print(self.true_labels)
         self._max_rank = max_rank
 
         # construct label embedding matrix, embeddings of labels are looked up in the original embeddings
         all_labels = sorted(all_labels)
-        self._label_embeddings = self._embeddings.get_array_embeddings(all_labels)
+        if type(embedding_extractor) == StaticEmbeddingExtractor:
+            self._label_embeddings = self._embeddings.get_array_embeddings(all_labels)
+        else:
+            self._label_embeddings = self._embeddings.get_single_word_representations(all_labels, all_labels)
         self._label2index = dict(zip(all_labels, range(len(all_labels))))
         self._index2label = dict(zip(range(len(all_labels)), all_labels))
         # normalize predictions and label embedding matrix (in case they are not normalized)
