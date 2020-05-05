@@ -2,3 +2,4 @@ from ranking_models.matrix_transfer_ranking import MatrixTransferRanker
 from ranking_models.transweigh_transfer_ranking import TransweighTransferRanker
 from ranking_models.matrix_pretrain import MatrixPretrain
 from ranking_models.transweigh_pretrain import TransweighPretrain
+from ranking_models.transweigh_joint_ranking import TransweighJointRanker
