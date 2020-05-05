@@ -14,6 +14,7 @@ from utils.loss_functions import get_loss_cosine_distance
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 from utils.data_loader import MultiRankingDataset, PretrainCompmodelDataset
 from tqdm import trange
+from utils import StaticEmbeddingExtractor, BertExtractor
 
 
 def pretrain(pretrain_loader, model, optimizer):
@@ -183,7 +184,8 @@ def get_save_path(model_path, split, representation_type):
     return prediction_path, rank_path
 
 
-def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, ranks_att_rep, dataset, labels, config):
+def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, ranks_att_rep, dataset, labels,
+             embedding_extractor):
     """
     Load nearest neighbour ranker for each representation type and log the corresponding results
     :param predictions_final_phrase: the predicted representations (the final composed phrase)
@@ -192,19 +194,19 @@ def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, 
     :param ranks_att_rep: the path to save the ranks to (for the attribute)
     :param dataset: the dataset to evaluate on
     :param labels: all possible labels that can be predicted
-    :param config: the configuration that corresponds to the data
+    :param embedding_extractor: the feature extractor that corresponds to the data
     """
     rank_loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset), num_workers=0,
                                               shuffle=False)
     ranker_attribute = NearestNeigbourRanker(path_to_predictions=predictions_att_rep,
-                                             embedding_path=config["feature_extractor"]["static"][
-                                                 "pretrained_model"], data_loader=rank_loader,
+                                             embedding_extractor=embedding_extractor,
+                                             data_loader=rank_loader,
                                              all_labels=labels,
                                              y_label="phrase", max_rank=1000)
     ranker_attribute.save_ranks(ranks_att_rep)
     ranker_final_rep = NearestNeigbourRanker(path_to_predictions=predictions_final_phrase,
-                                             embedding_path=config["feature_extractor"]["static"][
-                                                 "pretrained_model"], data_loader=rank_loader,
+                                             embedding_extractor=embedding_extractor,
+                                             data_loader=rank_loader,
                                              all_labels=labels,
                                              y_label="phrase", max_rank=1000)
     ranker_final_rep.save_ranks(ranks_final_phrase)
@@ -310,6 +312,18 @@ if __name__ == "__main__":
     valid_model.load_state_dict(torch.load(model_path))
     valid_model.eval()
 
+    if config_2["feature_extractor"]["context"] is False:
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=config_1["feature_extractor"]["static"]["pretrained_model"])
+    else:
+        bert_parameter = config_2["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
+        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                          batch_size=batch_size)
+
     if valid_model:
         logger.info("generating predictions for validation data...")
         valid_predictions_final_phrase, valid_predictions_att, valid_loss_final, valid_loss_att, valid_phrases = \
@@ -325,7 +339,7 @@ if __name__ == "__main__":
         evaluate(predictions_final_phrase=prediction_path_dev_final_rep,
                  predictions_att_rep=prediction_path_dev_attribute_rep, ranks_final_phrase=rank_path_dev_final_rep,
                  ranks_att_rep=rank_path_dev_attribute_rep, dataset=dataset_valid_2, labels=labels_dataset_2,
-                 config=config_2)
+                 embedding_extractor=feature_extractor)
     # do evaluation on test set if argument set to true
     if config_1["eval_on_test"]:
         logger.info("generating predictions for test data...")
@@ -342,4 +356,4 @@ if __name__ == "__main__":
         evaluate(predictions_final_phrase=prediction_path_test_final_rep,
                  predictions_att_rep=prediction_path_test_attribute_rep, ranks_final_phrase=rank_path_test_final_rep,
                  ranks_att_rep=rank_path_test_attribute_rep, dataset=dataset_test_2, labels=labels_dataset_2,
-                 config=config_2)
+                 embedding_extractor=feature_extractor)
