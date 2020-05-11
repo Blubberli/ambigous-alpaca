@@ -7,6 +7,7 @@ import json
 from nltk.tokenize import word_tokenize
 from utils import StaticEmbeddingExtractor
 
+
 # @TODO: look at centroid calculation
 def description_embedding(description, embeddings, config):
     """
@@ -46,7 +47,7 @@ def adj_triples(wsd_dataset, sense_embs, all_embeddings, config):
             description_emb = None
         sense = sense_embs[row['lu']]
         if row['mod'] not in adj_senses_and_descrs:
-            adj_senses_and_descrs[row['mod']] = [(row['lu'], sense,description_emb)]
+            adj_senses_and_descrs[row['mod']] = [(row['lu'], sense, description_emb)]
         else:
             adj_senses_and_descrs[row['mod']].append((row['lu'], sense, description_emb))
 
@@ -63,8 +64,6 @@ def load_dataset_gerco(path):
     df = df.rename(columns={"ADJ": "mod", "NOUN": "head", "ADJ_LU": "lu", "SENSE_DESCRIPTION": "description",
                             "CONTEXT": "context"})
     return df
-
-
 
 
 def read_sense_descriptions(path):
@@ -93,19 +92,20 @@ def get_baseline(wsd_dataset):
     correct = 0
     false = 0
     for _, row in wsd_dataset.iterrows():
-        #get all lus with adjective of current line's adjective
+        # get all lus with adjective of current line's adjective
         all_lus = wsd_dataset.loc[wsd_dataset['mod'] == row['mod']]
         all_lus = all_lus['lu'].to_list()
-        #get correct LU of current line
+        # get correct LU of current line
         correct_lu = row['lu']
-        #randomly choose one of all lus for that adjective
+        # randomly choose one of all lus for that adjective
         rand_lu = random.choice(all_lus)
         if correct_lu == rand_lu:
-            correct +=1
+            correct += 1
         else:
-            false +=1
+            false += 1
     accuracy = false / (correct + false) * 100
     return accuracy
+
 
 if __name__ == "__main__":
     argp = argparse.ArgumentParser()
@@ -114,7 +114,6 @@ if __name__ == "__main__":
 
     with open(argp.path_to_config, 'r') as f:  # read in arguments and save them into a configuration object
         config = json.load(f)
-
 
     wsd_dataset = load_dataset_gerco(config['train_data_path'])
     baseline = get_baseline(wsd_dataset)
