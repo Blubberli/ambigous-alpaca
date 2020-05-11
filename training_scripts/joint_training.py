@@ -14,6 +14,7 @@ from utils.loss_functions import get_loss_cosine_distance
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 from utils.data_loader import MultiRankingDataset, PretrainCompmodelDataset
 from tqdm import trange
+from utils import StaticEmbeddingExtractor, BertExtractor
 
 
 def pretrain(pretrain_loader, model, optimizer):
@@ -36,7 +37,7 @@ def pretrain(pretrain_loader, model, optimizer):
     return model, optimizer
 
 
-def train(config, pretrain_loader, train_loader, valid_loader_1, valid_loader_2, model_path, device):
+def train(config, pretrain_1, pretrain_2, train_loader, valid_loader_1, valid_loader_2, model_path, device):
     """
     This method trains a composition model jointly on two tasks. On top of that, the model is pretrained on the more
     general / harder task.
@@ -58,7 +59,17 @@ def train(config, pretrain_loader, train_loader, valid_loader_1, valid_loader_2,
     best_epoch = 1
     epoch = 1
     train_loss = 0.0
-    model, optimizer = pretrain(pretrain_loader, model, optimizer)
+    if pretrain_1:
+        # use one training set for pretraining
+        pretrain_loader = DataLoader(dataset_train_1, batch_size=config_1["iterator"]["batch_size"],
+                                     shuffle=True,
+                                     num_workers=0)
+        model, optimizer = pretrain(pretrain_loader, model, optimizer)
+    if pretrain_2:
+        pretrain_loader = DataLoader(dataset_train_2, batch_size=config_1["iterator"]["batch_size"],
+                                     shuffle=True,
+                                     num_workers=0)
+        model, optimizer = pretrain(pretrain_loader, model, optimizer)
     for epoch in range(1, config["num_epochs"] + 1):
         model.train()
         train_losses = []
@@ -126,7 +137,8 @@ def predict(test_loader, model, device):
     :param test_loader: dataloader torch object with test- or validation data
     :param model: trained model
     :param device: the device
-    :return: predictions and losses for the learned attribute and the final composed representation, the original phrases
+    :return: predictions and losses for the learned attribute and the final composed representation, the original
+    phrases
     """
     test_loss_att = []
     test_loss_final = []
@@ -172,7 +184,8 @@ def get_save_path(model_path, split, representation_type):
     return prediction_path, rank_path
 
 
-def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, ranks_att_rep, dataset, labels, config):
+def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, ranks_att_rep, dataset, labels,
+             embedding_extractor):
     """
     Load nearest neighbour ranker for each representation type and log the corresponding results
     :param predictions_final_phrase: the predicted representations (the final composed phrase)
@@ -181,19 +194,19 @@ def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, 
     :param ranks_att_rep: the path to save the ranks to (for the attribute)
     :param dataset: the dataset to evaluate on
     :param labels: all possible labels that can be predicted
-    :param config: the configuration that corresponds to the data
+    :param embedding_extractor: the feature extractor that corresponds to the data
     """
     rank_loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset), num_workers=0,
                                               shuffle=False)
     ranker_attribute = NearestNeigbourRanker(path_to_predictions=predictions_att_rep,
-                                             embedding_path=config["feature_extractor"]["static"][
-                                                 "pretrained_model"], data_loader=rank_loader,
+                                             embedding_extractor=embedding_extractor,
+                                             data_loader=rank_loader,
                                              all_labels=labels,
                                              y_label="phrase", max_rank=1000)
     ranker_attribute.save_ranks(ranks_att_rep)
     ranker_final_rep = NearestNeigbourRanker(path_to_predictions=predictions_final_phrase,
-                                             embedding_path=config["feature_extractor"]["static"][
-                                                 "pretrained_model"], data_loader=rank_loader,
+                                             embedding_extractor=embedding_extractor,
+                                             data_loader=rank_loader,
                                              all_labels=labels,
                                              y_label="phrase", max_rank=1000)
     ranker_final_rep.save_ranks(ranks_final_phrase)
@@ -218,6 +231,8 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser()
     argp.add_argument("path_to_config_1")
     argp.add_argument("path_to_config_2")
+    argp.add_argument("--pretrain_dataset_1", default=False, action='store_true')
+    argp.add_argument("--pretrain_dataset_2", default=False, action='store_true')
     argp = argp.parse_args()
 
     with open(argp.path_to_config_1, 'r') as f:
@@ -277,11 +292,6 @@ if __name__ == "__main__":
                               batch_size=config_1["iterator"]["batch_size"],
                               shuffle=True,
                               num_workers=0)
-    # use one training set for pretraining
-    pretrain_loader = DataLoader(dataset_train_1, batch_size=config_1["iterator"]["batch_size"],
-                                 shuffle=True,
-                                 num_workers=0)
-
     # load validation data in batches
     valid_loader_1 = torch.utils.data.DataLoader(dataset_valid_1,
                                                  batch_size=config_1["iterator"]["batch_size"],
@@ -293,13 +303,26 @@ if __name__ == "__main__":
     model = None
     y_label = None
     # train
-    train(config=config_1, pretrain_loader=pretrain_loader, train_loader=train_loader, valid_loader_1=valid_loader_1,
+    train(config=config_1, pretrain_1=argp.pretrain_dataset_1, pretrain_2=argp.pretrain_dataset_2,
+          train_loader=train_loader, valid_loader_1=valid_loader_1,
           valid_loader_2=valid_loader_2, device=device, model_path=model_path)
     # test and & evaluate
     logger.info("Loading best model from %s", model_path)
     valid_model = init_classifier(config_1)
     valid_model.load_state_dict(torch.load(model_path))
     valid_model.eval()
+
+    if config_2["feature_extractor"]["context"] is False:
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=config_1["feature_extractor"]["static"]["pretrained_model"])
+    else:
+        bert_parameter = config_2["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
+        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                          batch_size=batch_size)
 
     if valid_model:
         logger.info("generating predictions for validation data...")
@@ -316,7 +339,7 @@ if __name__ == "__main__":
         evaluate(predictions_final_phrase=prediction_path_dev_final_rep,
                  predictions_att_rep=prediction_path_dev_attribute_rep, ranks_final_phrase=rank_path_dev_final_rep,
                  ranks_att_rep=rank_path_dev_attribute_rep, dataset=dataset_valid_2, labels=labels_dataset_2,
-                 config=config_2)
+                 embedding_extractor=feature_extractor)
     # do evaluation on test set if argument set to true
     if config_1["eval_on_test"]:
         logger.info("generating predictions for test data...")
@@ -333,4 +356,4 @@ if __name__ == "__main__":
         evaluate(predictions_final_phrase=prediction_path_test_final_rep,
                  predictions_att_rep=prediction_path_test_attribute_rep, ranks_final_phrase=rank_path_test_final_rep,
                  ranks_att_rep=rank_path_test_attribute_rep, dataset=dataset_test_2, labels=labels_dataset_2,
-                 config=config_2)
+                 embedding_extractor=feature_extractor)
