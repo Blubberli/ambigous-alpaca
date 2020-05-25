@@ -86,3 +86,17 @@ def concat(word1, word2, axis):
     assert word1.shape == word2.shape, "can only concatenate two tensors of the same shape"
     assert axis <= len(word1.shape), "the given axis is out of bounds"
     return torch.cat((word1, word2), axis)
+
+
+def full_additive(modifier_matrix, modifier_vector, head_matrix, head_vector):
+    """
+    composes two vectors the following way: modifier_matrix * modifier_vector + head_matrix * head_vector
+    :param modifier_matrix: a torch tensor
+    :param modifier_vector: a torch tensor
+    :param head_matrix: a torch tensor
+    :param head_vector: a torch tensor
+    :return: a new tensor that is the composed form of modifier_vector and head_vector
+    """
+    transformed_modifier = torch.matmul(modifier_vector, modifier_matrix)
+    transformed_head = torch.matmul(head_vector, head_matrix)
+    return transformed_modifier + transformed_head
