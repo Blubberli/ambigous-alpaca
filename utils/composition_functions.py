@@ -97,6 +97,6 @@ def full_additive(modifier_matrix, modifier_vector, head_matrix, head_vector):
     :param head_vector: a torch tensor
     :return: a new tensor that is the composed form of modifier_vector and head_vector
     """
-    transformed_modifier = torch.matmul(modifier_vector, modifier_matrix)
-    transformed_head = torch.matmul(head_vector, head_matrix)
+    transformed_modifier = modifier_vector.matmul(modifier_matrix.t())
+    transformed_head = head_vector.matmul(head_matrix.t())
     return transformed_modifier + transformed_head
