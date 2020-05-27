@@ -12,7 +12,8 @@ from utils.training_utils import init_classifier, get_datasets
 from utils.data_loader import extract_all_labels, extract_all_words
 from utils.loss_functions import get_loss_cosine_distance
 import ffp
-from training_scripts.ranking import Ranker
+from utils import BertExtractor, StaticEmbeddingExtractor
+from training_scripts.nearest_neighbour import NearestNeigbourRanker
 
 
 def pretrain(config, train_loader, valid_loader, model_path, device):
@@ -192,6 +193,18 @@ if __name__ == "__main__":
                                    head=config["data_loader"]["head"],
                                    phrase=config["data_loader"]["phrase"])
 
+    if config["feature_extractor"]["context"] is False:
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=config["feature_extractor"]["static"]["pretrained_model"])
+    else:
+        bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
+        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                          batch_size=batch_size)
+
     # train
     pretrain(config, train_loader, valid_loader, model_path, device)
     # test and & evaluate
@@ -207,13 +220,20 @@ if __name__ == "__main__":
         logger.info("saved predictions to %s" % prediction_path_dev)
         logger.info("validation loss: %.5f" % (valid_loss))
         rank_loader = torch.utils.data.DataLoader(dataset_valid, batch_size=len(dataset_valid), num_workers=0)
-        ranker = Ranker(path_to_predictions=prediction_path_dev, embedding_path=config["feature_extractor"]["static"][
-            "pretrained_model"], data_loader=rank_loader, all_labels=labels,
-                        y_label="phrase", max_rank=1000)
-        ranker.save_ranks(rank_path_dev)
+        ranker_attribute = NearestNeigbourRanker(path_to_predictions=prediction_path_dev,
+                                                 embedding_extractor=feature_extractor,
+                                                 data_loader=rank_loader,
+                                                 all_labels=labels,
+                                                 y_label="phrase", max_rank=1000)
+        ranker_attribute.save_ranks(rank_path_dev)
 
-        logger.info(ranker.result)
-        logger.info("quartiles : %s" % str(ranker.quartiles))
+        logger.info("result for learned attribute representation")
+        logger.info(ranker_attribute.result)
+        logger.info("quartiles : %s" % str(ranker_attribute.quartiles))
+        logger.info(
+            "precision at rank 1: %.2f; precision at rank 5 %.2f" % (ranker_attribute._map_1, ranker_attribute._map_5))
+        logger.info("accuracy: %.2f; f1 score: %.2f" % (ranker_attribute.accuracy, ranker_attribute.f1))
+
         logger.info("saved ranks to %s" % rank_path_dev)
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
@@ -222,13 +242,21 @@ if __name__ == "__main__":
             logger.info("saved predictions to %s" % prediction_path_test)
             logger.info("test loss: %.5f" % (test_loss))
             rank_loader = torch.utils.data.DataLoader(dataset_test, batch_size=len(dataset_test), num_workers=0)
-            ranker = Ranker(path_to_predictions=prediction_path_test,
-                            embedding_path=config["feature_extractor"]["static"][
-                                "pretrained_model"], data_loader=rank_loader, all_labels=labels, y_label="phrase",
-                            max_rank=1000)
-            ranker.save_ranks(rank_path_test)
-            logger.info(ranker.result)
-            logger.info("quartiles : %s" % str(ranker.quartiles))
+            ranker_attribute = NearestNeigbourRanker(path_to_predictions=prediction_path_test,
+                                                     embedding_extractor=feature_extractor,
+                                                     data_loader=rank_loader,
+                                                     all_labels=labels,
+                                                     y_label="phrase", max_rank=1000)
+            ranker_attribute.save_ranks(rank_path_dev)
+
+            logger.info("result for learned attribute representation")
+            logger.info(ranker_attribute.result)
+            logger.info("quartiles : %s" % str(ranker_attribute.quartiles))
+            logger.info(
+                "precision at rank 1: %.2f; precision at rank 5 %.2f" % (
+                    ranker_attribute._map_1, ranker_attribute._map_5))
+            logger.info("accuracy: %.2f; f1 score: %.2f" % (ranker_attribute.accuracy, ranker_attribute.f1))
+
             logger.info("saved ranks to %s" % rank_path_test)
     else:
         logging.error("model could not been loaded correctly")
