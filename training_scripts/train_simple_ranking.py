@@ -207,7 +207,6 @@ if __name__ == "__main__":
                                    head=config["data_loader"]["head"],
                                    phrase=config["data_loader"]["phrase"])
 
-
     # train
     train(config, train_loader, valid_loader, model_path, device)
     # test and & evaluate
