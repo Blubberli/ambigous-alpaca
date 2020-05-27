@@ -1,7 +1,7 @@
 import unittest
 import torch
 import numpy as np
-from utils.data_loader import extract_all_words, PretrainCompmodelDataset
+from utils.data_loader import extract_all_words, StaticRankingDataset
 from torch.utils.data import DataLoader
 from training_scripts.ranking import Ranker
 
@@ -22,9 +22,9 @@ class RankingTest(unittest.TestCase):
                                         "data_pretraining/test.txt", separator=" ", head="head", modifier="modifier",
                                         phrase="phrase")
 
-        dataset_test = PretrainCompmodelDataset(data_path="data_pretraining/test.txt",
-                                                embedding_path=self.embedding_path, separator=" ",
-                                                phrase="phrase", mod="modifier", head="head")
+        dataset_test = StaticRankingDataset(data_path="data_pretraining/test.txt",
+                                            embedding_path=self.embedding_path, separator=" ",
+                                            phrase="phrase", mod="modifier", head="head")
         self.data_loader = DataLoader(dataset=dataset_test, shuffle=False, batch_size=len(dataset_test))
 
     def test_all_ranks(self):

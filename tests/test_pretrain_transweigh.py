@@ -7,7 +7,7 @@ from torch import optim
 from utils import loss_functions
 import torch.nn.functional as F
 from ranking_models import TransweighPretrain
-from utils.data_loader import PretrainCompmodelDataset
+from utils.data_loader import StaticRankingDataset, ContextualizedRankingDataset
 from torch.utils.data import DataLoader
 
 
@@ -19,11 +19,16 @@ class PretrainTransweighTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_pretraining/train.txt")
+        self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_ranking/train.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-        self._pretrain_dataset = PretrainCompmodelDataset(self._data_path, self._embedding_path, head="head",
-                                                          mod="modifier", phrase="phrase", separator=" ")
+        self._pretrain_dataset = StaticRankingDataset(self._data_path, self._embedding_path, head="head",
+                                                      mod="modifier", phrase="phrase", separator=" ")
+        self._contextualized_dataset = ContextualizedRankingDataset(data_path="data_ranking/attributes.txt", mod="modifier",
+                                                                    head="head", label="label",
+                                                                    bert_model='bert-base-german-cased', batch_size=2,
+                                                                    lower_case=False, max_len=10, separator=" ",
+                                                                    label_definition_path="data_ranking/attribute_definitions")
 
         modifier_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         head_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
@@ -102,3 +107,11 @@ class PretrainTransweighTest(unittest.TestCase):
         np.testing.assert_equal(data["w1"].shape, [3, 300])
         np.testing.assert_equal(data["w2"].shape, [3, 300])
         np.testing.assert_equal(data["l"].shape, [3, 300])
+
+    def test_contextualized(self):
+        dataloader = DataLoader(self._contextualized_dataset, batch_size=3, shuffle=True, num_workers=2)
+        data = next(iter(dataloader))
+        np.testing.assert_equal(data["w1"].shape, [3, 768])
+        np.testing.assert_equal(data["w2"].shape, [3, 768])
+        np.testing.assert_equal(data["l"].shape, [3, 768])
+        np.testing.assert_equal(len(data["label"]), 3)

@@ -2,6 +2,7 @@ import pathlib
 import numpy as np
 import unittest
 import pandas as pd
+from scipy.spatial.distance import cosine
 from utils import BertExtractor
 
 
@@ -18,6 +19,12 @@ class BertExtractorTest(unittest.TestCase):
         s2 = "Ich gehe zur Bank um Geld abzuheben"
         s3 = "In der Kirche steht eine Bank aus Holz auf der die Leute sitzen können"
         s4 = "Der Vater arbeitet bei der Bank als Finanzchef"
+        self.adj_noun_phrases = ["stürmisch Zustimmung", "rot Kleid"]
+        self.attributes = ["Emotion", "Farbe"]
+        self.definitions = ["Emotion beschreibt die Gemütsbewegung, Gefühl .",
+                            "Farbe ist die durch Lichtstrahlen bestimmter Wellenlänge hervorgerufene Erscheinung vor "
+                            "dem Auge ."]
+        self.modifier = ["stürmisch", "rot"]
         self.sentences = [s1, s2, s3, s4]
         self.target_words = ["Bank", "Bank", "Bank", "Bank"]
         data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_multiclassification/train.txt")
@@ -103,3 +110,16 @@ class BertExtractorTest(unittest.TestCase):
         np.testing.assert_equal(contextualized_embeddings.shape[0], 105)
         np.testing.assert_equal(contextualized_embeddings.shape[1], 768)
 
+    def test_simple_phrases(self):
+        attribute_embeddings = self.extractor.get_single_word_representations(target_words=self.attributes,
+                                                                              sentences=self.definitions)
+        contextualized_adjectives = self.extractor.get_single_word_representations(sentences=self.adj_noun_phrases,
+                                                                                   target_words=self.modifier)
+        dunkel_machenschaft_bewertung = 1 - cosine(attribute_embeddings[0], contextualized_adjectives[0])
+        dunkel_machenschaft_farbe = 1 - cosine(attribute_embeddings[1], contextualized_adjectives[0])
+
+        rot_kleid_bewertung = 1 - cosine(attribute_embeddings[0], contextualized_adjectives[1])
+        rot_kleid_farbe = 1 - cosine(attribute_embeddings[1], contextualized_adjectives[1])
+
+        np.testing.assert_equal(dunkel_machenschaft_bewertung > dunkel_machenschaft_farbe, True)
+        np.testing.assert_equal(rot_kleid_bewertung < rot_kleid_farbe, True)

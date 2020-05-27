@@ -9,7 +9,7 @@ from torch import optim
 import pathlib
 import numpy as np
 from utils.loss_functions import multi_class_cross_entropy, get_loss_cosine_distance
-from utils.data_loader import PretrainCompmodelDataset
+from utils.data_loader import StaticRankingDataset
 from torch.utils.data import DataLoader
 
 
@@ -29,8 +29,8 @@ class TransferCompClassifierTest(unittest.TestCase):
             self.config_static = json.load(f)
         _, _, self.simple_phrase_test = training_utils.get_datasets(self.config_static)
         self.data_loader = DataLoader(dataset=self.simple_phrase_test, batch_size=4)
-        self.pretrain_dataset = PretrainCompmodelDataset(data_path=data_pretrain, embedding_path=embeddings,
-                                                         separator=" ", head="head", mod="modifier", phrase="phrase")
+        self.pretrain_dataset = StaticRankingDataset(data_path=data_pretrain, embedding_path=embeddings,
+                                                     separator=" ", head="head", mod="modifier", phrase="phrase")
         self.pretrain_loader = DataLoader(dataset=self.pretrain_dataset, batch_size=4)
 
         self.tw_classifier = TransweighTwoWordClassifier(input_dim=300, hidden_dim=50, label_nr=3, dropout_rate=0.1,
