@@ -5,7 +5,7 @@ import numpy as np
 import json
 import torch
 from torch import optim
-from utils import PretrainCompmodelDataset
+from utils import StaticRankingDataset
 from torch.utils.data import DataLoader
 from classification_models import MatrixTwoWordClassifier, MatrixTransferClassifier
 from ranking_models import MatrixTransferRanker, MatrixPretrain
@@ -29,8 +29,8 @@ class MatrixCompositionModelTest(unittest.TestCase):
             self.config_static = json.load(f)
         _, _, self.simple_phrase_test = training_utils.get_datasets(self.config_static)
         self.data_loader = DataLoader(dataset=self.simple_phrase_test, batch_size=4)
-        self.pretrain_dataset = PretrainCompmodelDataset(data_path=data_pretrain, embedding_path=embeddings,
-                                                         separator=" ", head="head", mod="modifier", phrase="phrase")
+        self.pretrain_dataset = StaticRankingDataset(data_path=data_pretrain, embedding_path=embeddings,
+                                                     separator=" ", head="head", mod="modifier", phrase="phrase")
         self.pretrain_loader = DataLoader(dataset=self.pretrain_dataset, batch_size=4)
 
         self.model_multiclass = MatrixTwoWordClassifier(input_dim=300, hidden_dim=100, label_nr=3,

@@ -5,7 +5,7 @@ from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRan
     TransweighJointRanker, MatrixJointRanker, FullAdditive
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
-    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
+    PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, StaticRankingDataset, ContextualizedRankingDataset
 
 from utils.data_loader import create_label_encoder, extract_all_labels
 
@@ -131,24 +131,47 @@ def get_datasets(config):
         batch_size = bert_parameter["batch_size"]
         context = config["data_loader"]["context"]
         if config["feature_extractor"]["context"] is False:
-            # phrase only
-            dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
-                                                              bert_model=bert_model, lower_case=lower_case,
-                                                              max_len=max_len, separator=separator,
-                                                              batch_size=batch_size, label_encoder=label_encoder,
-                                                              label=label, phrase=phrase, context=context)
-            dataset_valid = SimplePhraseContextualizedDataset(data_path=config["validation_data_path"],
-                                                              bert_model=bert_model,
-                                                              lower_case=lower_case, max_len=max_len,
-                                                              separator=separator,
-                                                              batch_size=batch_size, label_encoder=label_encoder,
-                                                              label=label, phrase=phrase, context=context)
-            dataset_test = SimplePhraseContextualizedDataset(data_path=config["test_data_path"],
-                                                             bert_model=bert_model,
-                                                             lower_case=lower_case, max_len=max_len,
-                                                             separator=separator,
-                                                             batch_size=batch_size, label_encoder=label_encoder,
-                                                             label=label, phrase=phrase, context=context)
+            if "pretrain" in config["model"]["type"] or "ranking" in config["model"]["type"]:
+                mod = config["data_loader"]["modifier"]
+                head = config["data_loader"]["head"]
+                definition_file = config["data_loader"]["definitions"]
+                dataset_train = ContextualizedRankingDataset(data_path=config["train_data_path"],
+                                                             bert_model=bert_model, lower_case=lower_case,
+                                                             max_len=max_len, separator=separator,
+                                                             batch_size=batch_size,
+                                                             label=label, mod=mod, head=head,
+                                                             label_definition_path=definition_file)
+                dataset_valid = ContextualizedRankingDataset(data_path=config["validation_data_path"],
+                                                             bert_model=bert_model, lower_case=lower_case,
+                                                             max_len=max_len, separator=separator,
+                                                             batch_size=batch_size,
+                                                             label=label, mod=mod, head=head,
+                                                             label_definition_path=definition_file)
+                dataset_test = ContextualizedRankingDataset(data_path=config["test_data_path"],
+                                                            bert_model=bert_model, lower_case=lower_case,
+                                                            max_len=max_len, separator=separator,
+                                                            batch_size=batch_size,
+                                                            label=label, mod=mod, head=head,
+                                                             label_definition_path=definition_file)
+            else:
+                # phrase only
+                dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
+                                                                  bert_model=bert_model, lower_case=lower_case,
+                                                                  max_len=max_len, separator=separator,
+                                                                  batch_size=batch_size, label_encoder=label_encoder,
+                                                                  label=label, phrase=phrase, context=context)
+                dataset_valid = SimplePhraseContextualizedDataset(data_path=config["validation_data_path"],
+                                                                  bert_model=bert_model,
+                                                                  lower_case=lower_case, max_len=max_len,
+                                                                  separator=separator,
+                                                                  batch_size=batch_size, label_encoder=label_encoder,
+                                                                  label=label, phrase=phrase, context=context)
+                dataset_test = SimplePhraseContextualizedDataset(data_path=config["test_data_path"],
+                                                                 bert_model=bert_model,
+                                                                 lower_case=lower_case, max_len=max_len,
+                                                                 separator=separator,
+                                                                 batch_size=batch_size, label_encoder=label_encoder,
+                                                                 label=label, phrase=phrase, context=context)
         else:
             # phrase and sentence
             dataset_train = PhraseAndContextDatasetBert(data_path=config["train_data_path"],
@@ -180,15 +203,15 @@ def get_datasets(config):
             mod = config["data_loader"]["modifier"]
             head = config["data_loader"]["head"]
             if "pretrain" in config["model"]["type"] or "ranking" in config["model"]["type"]:
-                dataset_train = PretrainCompmodelDataset(data_path=config["train_data_path"],
-                                                         embedding_path=embedding_path, separator=separator,
-                                                         phrase=phrase, mod=mod, head=head)
-                dataset_test = PretrainCompmodelDataset(data_path=config["test_data_path"],
-                                                        embedding_path=embedding_path, separator=separator,
-                                                        phrase=phrase, mod=mod, head=head)
-                dataset_valid = PretrainCompmodelDataset(data_path=config["validation_data_path"],
-                                                         embedding_path=embedding_path, separator=separator,
-                                                         phrase=phrase, mod=mod, head=head)
+                dataset_train = StaticRankingDataset(data_path=config["train_data_path"],
+                                                     embedding_path=embedding_path, separator=separator,
+                                                     phrase=phrase, mod=mod, head=head)
+                dataset_test = StaticRankingDataset(data_path=config["test_data_path"],
+                                                    embedding_path=embedding_path, separator=separator,
+                                                    phrase=phrase, mod=mod, head=head)
+                dataset_valid = StaticRankingDataset(data_path=config["validation_data_path"],
+                                                     embedding_path=embedding_path, separator=separator,
+                                                     phrase=phrase, mod=mod, head=head)
             else:
                 dataset_train = SimplePhraseStaticDataset(data_path=config["train_data_path"],
                                                           embedding_path=embedding_path, separator=separator,

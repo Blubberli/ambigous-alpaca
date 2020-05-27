@@ -7,7 +7,7 @@ from torch import optim
 from utils import loss_functions
 import torch.nn.functional as F
 from ranking_models import TransweighJointRanker
-from utils.data_loader import PretrainCompmodelDataset, MultiRankingDataset
+from utils.data_loader import StaticRankingDataset, MultiRankingDataset
 from torch.utils.data import DataLoader
 
 
@@ -23,10 +23,10 @@ class JointRankingTest(unittest.TestCase):
         self._data_path_2 = pathlib.Path(__file__).parent.absolute().joinpath("data_pretraining/test.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
-        self._dataset_1 = PretrainCompmodelDataset(self._data_path_1, self._embedding_path, head="head",
-                                                   mod="modifier", phrase="phrase", separator=" ")
-        self._dataset_2 = PretrainCompmodelDataset(self._data_path_2, self._embedding_path, head="head",
-                                                   mod="modifier", phrase="phrase", separator=" ")
+        self._dataset_1 = StaticRankingDataset(self._data_path_1, self._embedding_path, head="head",
+                                               mod="modifier", phrase="phrase", separator=" ")
+        self._dataset_2 = StaticRankingDataset(self._data_path_2, self._embedding_path, head="head",
+                                               mod="modifier", phrase="phrase", separator=" ")
         modifier_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         head_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         gold_composed = F.normalize(torch.rand((50, 100)), dim=1)
