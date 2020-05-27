@@ -430,7 +430,7 @@ class MultiRankingDataset(Dataset):
 class ContextualizedRankingDataset(Dataset):
 
     def __init__(self, data_path, bert_model, max_len, lower_case, batch_size, separator, mod, head,
-                 label, label_definition_path):
+                 label, label_definition_path, context=None):
         """
         This Dataset can be used to train a composition model with contextualized embeddings to create attribute-like
         representations
@@ -443,17 +443,23 @@ class ContextualizedRankingDataset(Dataset):
         :param mod: [String] the label of the column the modifier is stored in
         :param head: [String] the label of the column the head is stored in
         :param label_definition_path: [String] path to the file that holds the definitions for the labels
+        :param context: [String] if given, the dataset should contain a column with context sentences based on which
+        the modifier and head words are contextualized
         """
         self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
         self._definitions = pandas.read_csv(label_definition_path, delimiter="\t", index_col=False)
         self._modifier_words = list(self.data[mod])
         self._head_words = list(self.data[head])
-        self._phrases = [self.modifier_words[i] + " " + self.head_words[i] for i in range(len(self.data))]
+        if context:
+            self._context_sentences = list(self.data[context])
+        else:
+            self._context_sentences = [self.modifier_words[i] + " " + self.head_words[i] for i in
+                                       range(len(self.data))]
         self._labels = list(self.data[label])
         self._label2definition = dict(zip(list(self._definitions["label"]), list(self._definitions["definition"])))
         self._label_definitions = [self._label2definition[l] for l in self.labels]
         assert len(self.modifier_words) == len(self.head_words) == len(
-            self.phrases), "invalid input data, different lenghts"
+            self.context_sentences), "invalid input data, different lenghts"
 
         self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                                 batch_size=batch_size)
@@ -468,8 +474,9 @@ class ContextualizedRankingDataset(Dataset):
         Looks up the embeddings for all modifier, heads and labels and stores them in a dictionary
         :return: List of dictionary objects, each storing the modifier, head and phrase embeddings (w1, w2, l)
         """
-        word1_embeddings = self.lookup_embedding(target_words=self.modifier_words, simple_phrases=self.phrases)
-        word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.phrases)
+        word1_embeddings = self.lookup_embedding(target_words=self.modifier_words,
+                                                 simple_phrases=self.context_sentences)
+        word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.context_sentences)
         label_embeddings = self.lookup_embedding(target_words=self.labels, simple_phrases=self._label_definitions)
         word1_embeddings = F.normalize(word1_embeddings, p=2, dim=1)
         word2_embeddings = F.normalize(word2_embeddings, p=2, dim=1)
@@ -477,7 +484,7 @@ class ContextualizedRankingDataset(Dataset):
         return [
             {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i]}
             for i in
-            range(len(self.phrases))]
+            range(len(self.labels))]
 
     def __len__(self):
         return len(self.data)
@@ -498,8 +505,8 @@ class ContextualizedRankingDataset(Dataset):
         return self._head_words
 
     @property
-    def phrases(self):
-        return self._phrases
+    def context_sentences(self):
+        return self._context_sentences
 
     @property
     def labels(self):
