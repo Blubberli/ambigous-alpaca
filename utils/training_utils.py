@@ -2,7 +2,7 @@ import torch
 from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
     PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
 from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker, \
-    TransweighJointRanker, MatrixJointRanker
+    TransweighJointRanker, MatrixJointRanker, FullAdditive
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, PretrainCompmodelDataset
@@ -37,7 +37,6 @@ def init_classifier(config):
                                              label_nr=config["model"]["label_size"],
                                              normalize_embeddings=config["model"]["normalize_embeddings"],
                                              add_single_words=config["model"]["add_single_words"])
-
     if config["model"]["type"] == "phrase_context":
         classifier = PhraseContextClassifier(embedding_dim=config["model"]["input_dim"],
                                              forward_hidden_dim=config["model"]["hidden_size"],
@@ -79,6 +78,10 @@ def init_classifier(config):
         classifier = MatrixPretrain(input_dim=config["model"]["input_dim"],
                                     dropout_rate=config["model"]["dropout"],
                                     normalize_embeddings=config["model"]["normalize_embeddings"])
+    if config["model"]["type"] == "full_additive_pretrain":
+        classifier = FullAdditive(input_dim=config["model"]["input_dim"],
+                                  dropout_rate=config["model"]["dropout"],
+                                  normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking":
         assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
             1] == 1.0, "the task weights have to sum to 1"
@@ -92,10 +95,10 @@ def init_classifier(config):
         assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
             1] == 1.0, "the task weights have to sum to 1"
         classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
-                                           dropout_rate=config["model"]["dropout"],
-                                           normalize_embeddings=config["model"]["normalize_embeddings"],
-                                           rep1_weight=config["model"]["task_weights"][0],
-                                           rep2_weight=config["model"]["task_weights"][1])
+                                       dropout_rate=config["model"]["dropout"],
+                                       normalize_embeddings=config["model"]["normalize_embeddings"],
+                                       rep1_weight=config["model"]["task_weights"][0],
+                                       rep2_weight=config["model"]["task_weights"][1])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
