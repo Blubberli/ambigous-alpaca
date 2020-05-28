@@ -11,6 +11,70 @@ from pathlib import Path
 import pandas as pd
 import seaborn as sn
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
+from training_scripts.nearest_neighbour import NearestNeigbourRanker
+
+
+def class_performance_nearest_neighbour(ranker, save_path):
+    """
+    The following method creates a dataframe that stores all results for each separate class
+    :param ranker: a nearest neighbour ranker
+    :param save_path: a path to save the dataframe to
+    :return: a dataframe that contains accuracy, quartiles, p@1, p@5 and average cosine similarity per class
+    """
+    relation2comp_similarities = defaultdict(list)
+    relation2ranks = defaultdict(list)
+    relation2predictions = defaultdict(list)
+    relation2correct = defaultdict(list)
+    for i in range(len(ranker.true_labels)):
+        true_label = ranker.true_labels[i]
+        predicted_label = ranker.predicted_labels[i]
+        cosine_similarity = ranker.composed_similarities[i]
+        rank = ranker.ranks[i]
+        relation2ranks[true_label].append(rank)
+        relation2comp_similarities[true_label].append(cosine_similarity)
+        relation2predictions[true_label] = predicted_label
+        if predicted_label == true_label:
+            relation2correct[true_label].append(1)
+        else:
+            relation2correct[true_label].append(0)
+
+    data = {}
+    relations, prec_1, prec_5, quart, accuracy, sim = [], [], [], [], [], []
+    for rel, v in relation2ranks.items():
+        presicion_1 = NearestNeigbourRanker.precision_at_rank(1, v)
+        presiction_5 = NearestNeigbourRanker.precision_at_rank(5, v)
+        quartiles, _ = Ranker.calculate_quartiles(v)
+        acc = accuracy_score(y_true=[1] * len(relation2correct[rel]), y_pred=relation2correct[rel])
+        average_sim = np.average(np.array(relation2comp_similarities[rel]))
+        relations.append(rel)
+        prec_1.append(presicion_1)
+        prec_5.append(presiction_5)
+        string_quartiles = " ".join(quartiles)
+        quart.append(string_quartiles)
+        accuracy.append(acc)
+        sim.append(average_sim)
+    data["relation"] = relations
+    data["p@1"] = prec_1
+    data["p@5"] = prec_5
+    data["quartiles"] = quart
+    data["accuracy"] = accuracy
+    data["average cosine similarity"] = sim
+    df = pd.DataFrame(data=data)
+    df.to_csv(save_path + "_per_class_results.csv")
+    return df
+
+
+def confusion_matrix_ranking(ranker, save_path):
+    """
+    Create a confusion matrix for a nearest neighbour ranker and a plot
+    :param ranker: a nearest neighbour ranker
+    :param save_path: the path to store the confusion matrix csv and plot
+    """
+    conf_matrix = confusion_matrix(ranker.true_labels, ranker.predicted_labels)
+    conf_matrix = pd.DataFrame(conf_matrix, index=labels, columns=labels)
+    plot_confusion_matrix(confusion_matrix=conf_matrix, save_path=save_path + "confusion_matrix.png")
+    conf_matrix.to_csv(save_path + "confusion_matrix.csv", sep="\t")
 
 
 def class_performance_ranks(ranker, eval_path):
@@ -64,13 +128,13 @@ def class_performance_classification(path_predictions, gold_loader, dataset, eva
     gold = next(iter(gold_loader))
     gold = gold["l"].numpy()
     set_labels = set(gold)
-    report = classification_report(gold, preds, labels=list(set_labels),  output_dict=True)
+    report = classification_report(gold, preds, labels=list(set_labels), output_dict=True)
     encoder = dataset.label_encoder
     f = open(eval_path, "w")
     for k, v in report.items():
         if k.isdigit():
             label = encoder.inverse_transform([int(k)])
-            scores = {type_score:round(score, 3) for type_score, score in v.items()}
+            scores = {type_score: round(score, 3) for type_score, score in v.items()}
             f.write(str(label) + "\t" + str(scores) + "\n")
         else:
             scores = {type_score: round(score, 3) for type_score, score in v.items()}
@@ -157,8 +221,10 @@ if __name__ == "__main__":
     else:
 
         if config["eval_on_test"]:
-            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader, dataset=dataset_valid, eval_path=eval_path_dev)
-            class_performance_classification(path_predictions=prediction_path_test, gold_loader=test_loader, dataset= dataset_test,eval_path= eval_path_test)
+            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader,
+                                             dataset=dataset_valid, eval_path=eval_path_dev)
+            class_performance_classification(path_predictions=prediction_path_test, gold_loader=test_loader,
+                                             dataset=dataset_test, eval_path=eval_path_test)
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
                 conf_path_test = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_test.csv"))
@@ -168,7 +234,8 @@ if __name__ == "__main__":
                                                 dataset=dataset_test, conf_path=conf_path_test, plot=argp.plot_matrix)
 
         else:
-            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader, dataset=dataset_valid, eval_path=eval_path_dev)
+            class_performance_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader,
+                                             dataset=dataset_valid, eval_path=eval_path_dev)
             if argp.confusion_matrix:
                 conf_path_dev = str(Path(config["model_path"]).joinpath(config["save_name"] + "_confusion_dev.csv"))
                 confusion_matrix_classification(path_predictions=prediction_path_dev, gold_loader=valid_loader,
