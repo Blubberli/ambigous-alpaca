@@ -16,7 +16,7 @@ from utils import BertExtractor, StaticEmbeddingExtractor
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 
 
-def pretrain(config, train_loader, valid_loader, model_path, device):
+def train(config, train_loader, valid_loader, model_path, device):
     """
         method to pretrain a composition model
         :param config: config json file
@@ -151,6 +151,18 @@ if __name__ == "__main__":
 
     # set random seed
     np.random.seed(config["seed"])
+    if config["feature_extractor"]["contextualized_embeddings"]:
+        bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
+        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                          batch_size=batch_size)
+    else:
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=config["feature_extractor"]["static"]["pretrained_model"])
+
     # read in data...
     dataset_train, dataset_valid, dataset_test = get_datasets(config)
 
@@ -177,6 +189,8 @@ if __name__ == "__main__":
     logger.info("the training data contains %d words" % len(dataset_train))
     logger.info("the validation data contains %d words" % len(dataset_valid))
     logger.info("the test data contains %d words" % len(dataset_test))
+    logger.info("training with the following parameter")
+    logger.info(config)
     y_label = None
     if modus == "pretrain_label":
         labels = extract_all_labels(training_data=config["train_data_path"],
@@ -193,20 +207,8 @@ if __name__ == "__main__":
                                    head=config["data_loader"]["head"],
                                    phrase=config["data_loader"]["phrase"])
 
-    if config["feature_extractor"]["context"] is False:
-        feature_extractor = StaticEmbeddingExtractor(
-            path_to_embeddings=config["feature_extractor"]["static"]["pretrained_model"])
-    else:
-        bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
-        bert_model = bert_parameter["model"]
-        max_len = bert_parameter["max_sent_len"]
-        lower_case = bert_parameter["lower_case"]
-        batch_size = bert_parameter["batch_size"]
-        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
-                                          batch_size=batch_size)
-
     # train
-    pretrain(config, train_loader, valid_loader, model_path, device)
+    train(config, train_loader, valid_loader, model_path, device)
     # test and & evaluate
     logger.info("Loading best model from %s", model_path)
     valid_model = init_classifier(config)

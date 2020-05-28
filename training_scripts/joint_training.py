@@ -12,7 +12,7 @@ from utils.training_utils import init_classifier, get_datasets
 from utils.data_loader import extract_all_labels, extract_all_words
 from utils.loss_functions import get_loss_cosine_distance
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
-from utils.data_loader import MultiRankingDataset, PretrainCompmodelDataset
+from utils.data_loader import MultiRankingDataset, StaticRankingDataset
 from tqdm import trange
 from utils import StaticEmbeddingExtractor, BertExtractor
 
@@ -270,8 +270,8 @@ if __name__ == "__main__":
     dataset_train_1, dataset_valid_1, dataset_test_1 = get_datasets(config_1)
     dataset_train_2, dataset_valid_2, dataset_test_2 = get_datasets(config_2)
 
-    assert type(dataset_train_1) == PretrainCompmodelDataset and type(
-        dataset_train_2) == PretrainCompmodelDataset, "the dataset type is invalid for this kind of training"
+    assert type(dataset_train_1) == StaticRankingDataset and type(
+        dataset_train_2) == StaticRankingDataset, "the dataset type is invalid for this kind of training"
 
     labels_dataset_1 = extract_all_words(training_data=config_1["train_data_path"],
                                          validation_data=config_1["validation_data_path"],

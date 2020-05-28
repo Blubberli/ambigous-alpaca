@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, accuracy_score
 from utils import StaticEmbeddingExtractor
 from training_scripts.ranking import Ranker
+from utils.data_loader import ContextualizedRankingDataset, StaticRankingDataset
 
 
 class NearestNeigbourRanker:
@@ -20,7 +21,8 @@ class NearestNeigbourRanker:
         :param all_labels: [list(String)] a list of all unique labels that can occur in the test data
         :param max_rank: [int] the worst possible rank (even if an instance would get a lower rank it is set to this
         number)
-        :param y_label: [String] the column name of the label in the test data
+        :param y_label: [String] the column name of the label in the test data, for the ContextualizedRankingDataset this has
+        to be 'label', for the StaticRankingDataset this has to be 'phrase'
         """
         # load composed predictions
         self._predicted_embeddings = np.load(path_to_predictions, allow_pickle=True)
@@ -35,18 +37,29 @@ class NearestNeigbourRanker:
         if type(embedding_extractor) == StaticEmbeddingExtractor:
             self._label_embeddings = self._embeddings.get_array_embeddings(all_labels)
         else:
-            self._label_embeddings = self._embeddings.get_single_word_representations(all_labels, all_labels)
+            # if using contextualized embeddings, the dataset has to be of the corresponding dataset type.
+            # Here the definitions are stored in a dictionary that can be accessed to look up all contextualized
+            # label embeddings
+            assert type(
+                data_loader.dataset) == ContextualizedRankingDataset, "the dataset in the dataloader doesn't contain " \
+                                                                      "the correct dataset type"
+            label2definitions = data_loader.dataset._label2definition
+            definitions = [label2definitions[l] for l in all_labels]
+            self._label_embeddings = self._embeddings.get_single_word_representations(target_words=all_labels,
+                                                                                      sentences=definitions)
         self._label2index = dict(zip(all_labels, range(len(all_labels))))
         self._index2label = dict(zip(range(len(all_labels)), all_labels))
         # normalize predictions and label embedding matrix (in case they are not normalized)
         self._label_embeddings = F.normalize(torch.from_numpy(np.array(self._label_embeddings)), p=2, dim=1)
-        self._predicted_embeddings = F.normalize(torch.from_numpy(np.array(self._predicted_embeddings)), p=2, dim=1)
+        self._predicted_embeddings = F.normalize(torch.from_numpy(np.array(self._predicted_embeddings)), p=2,
+                                                 dim=1)
         # compute the ranks, quartiles and precision
         self._ranks, self._composed_similarities, self._predicted_labels = self.get_target_based_rank()
         self._quartiles, self._result = Ranker.calculate_quartiles(self._ranks)
         self._map_1 = self.precision_at_rank(1, self.ranks)
         self._map_5 = self.precision_at_rank(5, self.ranks)
         self._accuracy, self._f1 = self.performance_metrics()
+        self._average_similarity = np.average(self.composed_similarities)
 
     def get_target_based_rank(self):
         """
@@ -166,3 +179,7 @@ class NearestNeigbourRanker:
     @property
     def f1(self):
         return self._f1
+
+    @property
+    def average_similarity(self):
+        return self._average_similarity

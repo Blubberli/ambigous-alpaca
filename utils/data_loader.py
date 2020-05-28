@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 from sklearn.preprocessing import LabelEncoder
 import pandas
 import torch
@@ -327,7 +328,7 @@ class PhraseAndContextDatasetBert(SimplePhraseDataset):
         return self._tokenizer
 
 
-class PretrainCompmodelDataset(Dataset):
+class StaticRankingDataset(Dataset):
 
     def __init__(self, data_path, embedding_path, separator, mod, head, phrase):
         """
@@ -400,6 +401,7 @@ class MultiRankingDataset(Dataset):
     """
     This dataset can be used to combine two different dataset into one. The datasets need to be of the same type.
     """
+
     def __init__(self, dataset_1, dataset_2):
         assert type(dataset_1) == type(dataset_2), "cannot combine two datasets of different types"
         self._dataset_1 = dataset_1
@@ -423,3 +425,97 @@ class MultiRankingDataset(Dataset):
     @property
     def dataset_2(self):
         return self._dataset_2
+
+
+class ContextualizedRankingDataset(Dataset):
+
+    def __init__(self, data_path, bert_model, max_len, lower_case, batch_size, separator, mod, head,
+                 label, label_definition_path, context=None):
+        """
+        This Dataset can be used to train a composition model with contextualized embeddings to create attribute-like
+        representations
+        :param data_path: [String] The path to the csv datafile that needs to be transformed into a dataset.
+        :param bert_model: [String] The Bert model to be used for extracting the contextualized embeddings
+        :param max_len: [int] the maximum length of word pieces (can be a large number)
+        :param lower_case: [boolean] Whether the tokenizer should lower case words or not
+        :param separator: [String] the csv separator
+        :param label: [String] the label of the column the class label is stored in
+        :param mod: [String] the label of the column the modifier is stored in
+        :param head: [String] the label of the column the head is stored in
+        :param label_definition_path: [String] path to the file that holds the definitions for the labels
+        :param context: [String] if given, the dataset should contain a column with context sentences based on which
+        the modifier and head words are contextualized
+        """
+        self._data = pandas.read_csv(data_path, delimiter=separator, index_col=False)
+        self._definitions = pandas.read_csv(label_definition_path, delimiter="\t", index_col=False)
+        self._modifier_words = list(self.data[mod])
+        self._head_words = list(self.data[head])
+        if context:
+            self._context_sentences = list(self.data[context])
+        else:
+            self._context_sentences = [self.modifier_words[i] + " " + self.head_words[i] for i in
+                                       range(len(self.data))]
+        self._labels = list(self.data[label])
+        self._label2definition = dict(zip(list(self._definitions["label"]), list(self._definitions["definition"])))
+        self._label_definitions = [self._label2definition[l] for l in self.labels]
+        assert len(self.modifier_words) == len(self.head_words) == len(
+            self.context_sentences), "invalid input data, different lenghts"
+
+        self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                                batch_size=batch_size)
+        self._samples = self.populate_samples()
+
+    def lookup_embedding(self, simple_phrases, target_words):
+        return self.feature_extractor.get_single_word_representations(target_words=target_words,
+                                                                      sentences=simple_phrases)
+
+    def populate_samples(self):
+        """
+        Looks up the embeddings for all modifier, heads and labels and stores them in a dictionary
+        :return: List of dictionary objects, each storing the modifier, head and phrase embeddings (w1, w2, l)
+        """
+        word1_embeddings = self.lookup_embedding(target_words=self.modifier_words,
+                                                 simple_phrases=self.context_sentences)
+        word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.context_sentences)
+        label_embeddings = self.lookup_embedding(target_words=self.labels, simple_phrases=self._label_definitions)
+        word1_embeddings = F.normalize(word1_embeddings, p=2, dim=1)
+        word2_embeddings = F.normalize(word2_embeddings, p=2, dim=1)
+        label_embeddings = F.normalize(label_embeddings, p=2, dim=1)
+        return [
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i]}
+            for i in
+            range(len(self.labels))]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.samples[idx]
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def modifier_words(self):
+        return self._modifier_words
+
+    @property
+    def head_words(self):
+        return self._head_words
+
+    @property
+    def context_sentences(self):
+        return self._context_sentences
+
+    @property
+    def labels(self):
+        return self._labels
+
+    @property
+    def feature_extractor(self):
+        return self._feature_extractor
+
+    @property
+    def samples(self):
+        return self._samples
