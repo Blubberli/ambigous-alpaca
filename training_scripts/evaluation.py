@@ -50,6 +50,7 @@ def class_performance_nearest_neighbour(ranker, save_path):
         relations.append(rel)
         prec_1.append(presicion_1)
         prec_5.append(presiction_5)
+        quartiles = [str(el) for el in quartiles]
         string_quartiles = " ".join(quartiles)
         quart.append(string_quartiles)
         accuracy.append(acc)
@@ -72,6 +73,12 @@ def confusion_matrix_ranking(ranker, save_path):
     :param save_path: the path to store the confusion matrix csv and plot
     """
     conf_matrix = confusion_matrix(ranker.true_labels, ranker.predicted_labels)
+    conf_matrix = np.transpose( np.transpose(conf_matrix) / conf_matrix.astype(np.float).sum(axis=1) )
+    conf_matrix[np.isnan(conf_matrix)] = 0
+    conf_matrix = np.round(conf_matrix, decimals=2)
+    conf_matrix = conf_matrix * 100
+    conf_matrix = conf_matrix.astype(np.int)
+    labels = np.unique(np.concatenate((ranker.predicted_labels, ranker.true_labels), axis=0))
     conf_matrix = pd.DataFrame(conf_matrix, index=labels, columns=labels)
     plot_confusion_matrix(confusion_matrix=conf_matrix, save_path=save_path + "confusion_matrix.png")
     conf_matrix.to_csv(save_path + "confusion_matrix.csv", sep="\t")
@@ -150,7 +157,7 @@ def plot_confusion_matrix(confusion_matrix, save_path):
     :param save_path: the path to save the plot as png
     """
     plt.figure(figsize=(10, 11))
-    sn.heatmap(confusion_matrix, annot=True)
+    sn.heatmap(confusion_matrix, annot=True, fmt='d')
     sn.set(font_scale=0.9)
     plt.savefig(save_path, dpi=300)
 
