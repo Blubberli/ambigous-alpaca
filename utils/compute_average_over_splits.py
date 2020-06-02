@@ -1,5 +1,6 @@
 import ast
 import os
+import re
 from collections import defaultdict
 import argparse
 import numpy as np
@@ -16,7 +17,8 @@ def read_log_file(log_file):
     parameter = None
     for line in open(log_file, "r"):
         if "{" in line and "}" in line:
-            parameter = line.split("INFO - ")[1]
+            matcher = re.compile("{.*}")
+            parameter = matcher.search(line).group(0)
             parameter = ast.literal_eval(parameter)
         if "f1 score" in line:
             f1 = line.split(";")[1].strip().replace("f1 score: ", "")
