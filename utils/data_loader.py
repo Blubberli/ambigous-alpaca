@@ -362,7 +362,7 @@ class StaticRankingDataset(Dataset):
         word2_embeddings = self.lookup_embedding(self.head_words)
         label_embeddings = self.lookup_embedding(self.phrases)
         return [
-            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "phrase": self.phrases[i]}
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.phrases[i]}
             for i in
             range(len(self.phrases))]
 
