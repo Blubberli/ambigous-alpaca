@@ -142,8 +142,10 @@ def predict(test_loader, model, device):
     """
     test_loss_att = []
     test_loss_final = []
+    test_loss_reconstructed = []
     predictions_final_rep = []
     predictions_attribute_rep = []
+    predictions_reconstructed_rep = []
     orig_phrases = []
     model.to(device)
     for batch in test_loader:
@@ -151,20 +153,27 @@ def predict(test_loader, model, device):
         composed, rep1, rep2 = model(batch)
         composed = composed.squeeze().to("cpu")
         rep2 = rep2.squeeze().to("cpu")
+        rep1 = rep1.squeeze().to("cpu")
         for pred in rep2:
             predictions_attribute_rep.append(pred.detach().numpy())
         for pred in composed:
             predictions_final_rep.append(pred.detach().numpy())
+        for pred in rep1:
+            predictions_reconstructed_rep.append(pred.detach().numpy())
         loss_att = get_loss_cosine_distance(composed_phrase=rep2, original_phrase=batch["l"])
+        loss_reconstructed = get_loss_cosine_distance(composed_phrase=rep1, original_phrase=batch["l"])
         loss_final = get_loss_cosine_distance(composed_phrase=composed, original_phrase=batch["l"])
         test_loss_att.append(loss_att.item())
+        test_loss_reconstructed.append(loss_reconstructed.item())
         test_loss_final.append(loss_final.item())
         orig_phrases.append(batch["phrase"])
     orig_phrases = [item for sublist in orig_phrases for item in sublist]
     predictions_final_rep = np.array(predictions_final_rep)
     predictions_attribute_rep = np.array(predictions_attribute_rep)
-    return predictions_final_rep, predictions_attribute_rep, np.average(test_loss_final), np.average(
-        test_loss_att), orig_phrases
+    predictions_reconstructed_rep = np.array(predictions_reconstructed_rep)
+    return predictions_final_rep, predictions_attribute_rep, predictions_reconstructed_rep, np.average(
+        test_loss_final), np.average(
+        test_loss_att), np.average(test_loss_reconstructed), orig_phrases
 
 
 def save_predictions(predictions, path):
@@ -184,14 +193,17 @@ def get_save_path(model_path, split, representation_type):
     return prediction_path, rank_path
 
 
-def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, ranks_att_rep, dataset, labels,
+def evaluate(predictions_final_phrase, predictions_att_rep, predictions_reconstructed_rep, ranks_final_phrase,
+             ranks_att_rep, ranks_reconstructed_rep, dataset, labels,
              embedding_extractor):
     """
     Load nearest neighbour ranker for each representation type and log the corresponding results
     :param predictions_final_phrase: the predicted representations (the final composed phrase)
     :param predictions_att_rep: the predicted representations (the attribute-specific representation)
+    :param predictions_reconstructed_rep: the predicted representations (the reconstructed phrase)
     :param ranks_final_phrase: the path to save the ranks to (for final phrase)
     :param ranks_att_rep: the path to save the ranks to (for the attribute)
+    :param ranks_reconstructed_rep: the path to save the ranks to (for reconstructed phrase)
     :param dataset: the dataset to evaluate on
     :param labels: all possible labels that can be predicted
     :param embedding_extractor: the feature extractor that corresponds to the data
@@ -204,6 +216,12 @@ def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, 
                                              all_labels=labels,
                                              y_label="phrase", max_rank=1000)
     ranker_attribute.save_ranks(ranks_att_rep)
+    ranker_reconstructed = NearestNeigbourRanker(path_to_predictions=predictions_reconstructed_rep,
+                                                 embedding_extractor=embedding_extractor,
+                                                 data_loader=rank_loader,
+                                                 all_labels=labels,
+                                                 y_label="phrase", max_rank=1000)
+    ranker_reconstructed.save_ranks(ranks_reconstructed_rep)
     ranker_final_rep = NearestNeigbourRanker(path_to_predictions=predictions_final_phrase,
                                              embedding_extractor=embedding_extractor,
                                              data_loader=rank_loader,
@@ -217,6 +235,14 @@ def evaluate(predictions_final_phrase, predictions_att_rep, ranks_final_phrase, 
     logger.info(
         "precision at rank 1: %.2f; precision at rank 5 %.2f" % (ranker_attribute._map_1, ranker_attribute._map_5))
     logger.info("accuracy: %.2f; f1 score: %.2f" % (ranker_attribute.accuracy, ranker_attribute.f1))
+
+    logger.info(("result for reconstructed representation"))
+    logger.info(ranker_reconstructed.result)
+    logger.info("quartiles : %s" % str(ranker_reconstructed.quartiles))
+    logger.info(
+        "precision at rank 1: %.2f; precision at rank 5 %.2f" % (
+            ranker_reconstructed._map_1, ranker_reconstructed._map_5))
+    logger.info("accuracy: %.2f; f1 score: %.2f" % (ranker_reconstructed.accuracy, ranker_reconstructed.f1))
 
     logger.info(("\nresult for final representation"))
     logger.info(ranker_final_rep.result)
@@ -257,6 +283,11 @@ if __name__ == "__main__":
 
     prediction_path_dev_attribute_rep, rank_path_dev_attribute_rep = get_save_path(model_path, "_attribute_rep", "dev")
     prediction_path_test_attribute_rep, rank_path_test_attribute_rep = get_save_path(model_path, "_attribute_rep",
+                                                                                     "test")
+
+    prediction_path_dev_reconstructed, rank_path_dev_reconstructed = get_save_path(model_path, "_reconstructed_rep",
+                                                                                   "dev")
+    prediction_path_test_reconstructed, rank_path_test_reconstructed = get_save_path(model_path, "_reconstructed_rep",
                                                                                      "test")
 
     logging.config.dictConfig(create_config(log_file))
@@ -312,10 +343,7 @@ if __name__ == "__main__":
     valid_model.load_state_dict(torch.load(model_path))
     valid_model.eval()
 
-    if config_2["feature_extractor"]["context"] is False:
-        feature_extractor = StaticEmbeddingExtractor(
-            path_to_embeddings=config_1["feature_extractor"]["static"]["pretrained_model"])
-    else:
+    if config_2["feature_extractor"]["contextualized_embeddings"]:
         bert_parameter = config_2["feature_extractor"]["contextualized"]["bert"]
         bert_model = bert_parameter["model"]
         max_len = bert_parameter["max_sent_len"]
@@ -323,37 +351,53 @@ if __name__ == "__main__":
         batch_size = bert_parameter["batch_size"]
         feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                           batch_size=batch_size)
+    else:
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=config_2["feature_extractor"]["static"]["pretrained_model"])
 
     if valid_model:
         logger.info("generating predictions for validation data...")
-        valid_predictions_final_phrase, valid_predictions_att, valid_loss_final, valid_loss_att, valid_phrases = \
-            predict(
-                valid_loader_2,
-                valid_model, device)
+        valid_predictions_final_phrase, valid_predictions_att, valid_predictions_rec, valid_loss_final, \
+        valid_loss_att, valid_loss_reconstructed, valid_phrases = predict(valid_loader_2, valid_model, device)
         save_predictions(predictions=valid_predictions_final_phrase, path=prediction_path_dev_final_rep)
         save_predictions(predictions=valid_predictions_att, path=prediction_path_dev_attribute_rep)
+        save_predictions(predictions=valid_predictions_rec, path=prediction_path_dev_reconstructed)
         logger.info("saved predictions to %s" % prediction_path_dev_final_rep)
         logger.info("saved predictions to %s" % prediction_path_dev_attribute_rep)
+        logger.info("saved predictions to %s" % prediction_path_dev_reconstructed)
+
         logger.info("validation loss att: %.5f" % valid_loss_att)
+        logger.info("validation loss reconstructed phrase: %.5f" % valid_loss_reconstructed)
         logger.info("validation loss final phrase: %.5f" % valid_loss_final)
         evaluate(predictions_final_phrase=prediction_path_dev_final_rep,
-                 predictions_att_rep=prediction_path_dev_attribute_rep, ranks_final_phrase=rank_path_dev_final_rep,
-                 ranks_att_rep=rank_path_dev_attribute_rep, dataset=dataset_valid_2, labels=labels_dataset_2,
+                 predictions_att_rep=prediction_path_dev_attribute_rep,
+                 predictions_reconstructed_rep=prediction_path_dev_reconstructed,
+                 ranks_final_phrase=rank_path_dev_final_rep,
+                 ranks_att_rep=rank_path_dev_attribute_rep,
+                 ranks_reconstructed_rep=rank_path_dev_reconstructed, dataset=dataset_valid_2, labels=labels_dataset_2,
                  embedding_extractor=feature_extractor)
     # do evaluation on test set if argument set to true
     if config_1["eval_on_test"]:
         logger.info("generating predictions for test data...")
         test_loader = torch.utils.data.DataLoader(dataset_test_2, batch_size=len(dataset_test_2), num_workers=0,
                                                   shuffle=False)
-        test_predictions_final_phrase, test_predictions_att, test_loss_final, test_loss_att, test_phrases = predict(
+        test_predictions_final_phrase, test_predictions_att, test_predictions_rec, test_loss_final, test_loss_att, \
+        testl_loss_rec, test_phrases = predict(
             test_loader, valid_model, device)
         save_predictions(predictions=test_predictions_final_phrase, path=prediction_path_test_final_rep)
         save_predictions(predictions=test_predictions_att, path=prediction_path_test_attribute_rep)
+        save_predictions(predictions=test_predictions_rec, path=prediction_path_test_reconstructed)
+
         logger.info("saved predictions to %s" % prediction_path_test_final_rep)
         logger.info("saved predictions to %s" % prediction_path_test_attribute_rep)
-        logger.info("validation loss att: %.5f" % test_loss_att)
-        logger.info("validation loss final phrase: %.5f" % test_loss_final)
+        logger.info("saved predictions to %s" % prediction_path_test_reconstructed)
+
+        logger.info("test loss att: %.5f" % test_loss_att)
+        logger.info("test loss reconstructed: %.5f" % test_loss_att)
+        logger.info("test loss final phrase: %.5f" % test_loss_final)
         evaluate(predictions_final_phrase=prediction_path_test_final_rep,
-                 predictions_att_rep=prediction_path_test_attribute_rep, ranks_final_phrase=rank_path_test_final_rep,
-                 ranks_att_rep=rank_path_test_attribute_rep, dataset=dataset_test_2, labels=labels_dataset_2,
+                 predictions_att_rep=prediction_path_test_attribute_rep,
+                 predictions_reconstructed_rep=test_predictions_rec, ranks_final_phrase=rank_path_test_final_rep,
+                 ranks_att_rep=rank_path_test_attribute_rep, ranks_reconstructed_rep=rank_path_test_reconstructed,
+                 dataset=dataset_test_2, labels=labels_dataset_2,
                  embedding_extractor=feature_extractor)

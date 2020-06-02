@@ -88,17 +88,13 @@ def init_classifier(config):
         classifier = TransweighJointRanker(input_dim=config["model"]["input_dim"],
                                            dropout_rate=config["model"]["dropout"],
                                            normalize_embeddings=config["model"]["normalize_embeddings"],
-                                           transformations=config["model"]["transformations"],
-                                           rep1_weight=config["model"]["task_weights"][0],
-                                           rep2_weight=config["model"]["task_weights"][1])
+                                           transformations=config["model"]["transformations"])
     if config["model"]["type"] == "joint_ranking_matrix":
         assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
             1] == 1.0, "the task weights have to sum to 1"
         classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
                                        dropout_rate=config["model"]["dropout"],
-                                       normalize_embeddings=config["model"]["normalize_embeddings"],
-                                       rep1_weight=config["model"]["task_weights"][0],
-                                       rep2_weight=config["model"]["task_weights"][1])
+                                       normalize_embeddings=config["model"]["normalize_embeddings"])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
