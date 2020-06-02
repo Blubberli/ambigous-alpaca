@@ -9,7 +9,7 @@ from utils.data_loader import extract_all_labels, StaticRankingDataset, Contextu
 import numpy as np
 
 
-def get_average_phrase(data):
+def get_average_phrase(data, average = 'mean'):
     """
     :param data: dataset as dataloader
     :return averages: list of averages of phrases
@@ -17,7 +17,13 @@ def get_average_phrase(data):
     data_all = next(iter(data))
     averages = []
     for m, h in zip(data_all["w1"], data_all["w2"]):
-        averages.append(m.add(h))
+        if average == 'mean':
+            averages.append(np.mean((np.array(m), np.array(h)), axis = 0))
+
+        elif average == 'sum':
+            averages.append(np.array(m.add(h)))
+        else:
+            print("invalid average parameter")
     return averages
 
 
@@ -84,7 +90,7 @@ if __name__ == "__main__":
                                           batch_size=batch_size)
 
     data_loader_val = DataLoader(data_val, batch_size=len(data_val), num_workers=0)
-    average_phrases = get_average_phrase(data_loader_val)
+    average_phrases = get_average_phrase(data_loader_val, average=config['average_vectors'])
     save_predictions(predictions=average_phrases, path=prediction_path_val)
 
     labels = extract_all_labels(training_data=config["train_data_path"],
@@ -107,9 +113,9 @@ if __name__ == "__main__":
                                          config["data"]["head"], config["data"]["label"])
         data_loader_test = DataLoader(data_val, batch_size=len(data_val), num_workers=0)
         if config["feature_extractor"]["contextualized_embeddings"] is False:
-            average_phrases_test, labels_test = get_average_phrase(data_loader_test)
+            average_phrases_test, labels_test = get_average_phrase(data_loader_test, average=config['average_vectors'])
         else:
-            average_phrases_test, labels_test = get_average_phrase(data_loader_test)
+            average_phrases_test, labels_test = get_average_phrase(data_loader_test, average=config['average_vectors'])
         ranker_attribute_test = NearestNeigbourRanker(path_to_predictions=prediction_path_test,
                                                       embedding_extractor=feature_extractor,
                                                       data_loader=[data_test],
