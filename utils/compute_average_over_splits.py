@@ -16,7 +16,7 @@ def read_log_file(log_file):
     precision_1 = None
     parameter = None
     for line in open(log_file, "r"):
-        if "{" in line and "}" in line:
+        if "{" in line and "}" in line and not parameter:
             matcher = re.compile("{.*}")
             parameter = matcher.search(line).group(0)
             parameter = ast.literal_eval(parameter)
