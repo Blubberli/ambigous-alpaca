@@ -397,7 +397,7 @@ if __name__ == "__main__":
         logger.info("test loss final phrase: %.5f" % test_loss_final)
         evaluate(predictions_final_phrase=prediction_path_test_final_rep,
                  predictions_att_rep=prediction_path_test_attribute_rep,
-                 predictions_reconstructed_rep=test_predictions_rec, ranks_final_phrase=rank_path_test_final_rep,
+                 predictions_reconstructed_rep=prediction_path_test_reconstructed, ranks_final_phrase=rank_path_test_final_rep,
                  ranks_att_rep=rank_path_test_attribute_rep, ranks_reconstructed_rep=rank_path_test_reconstructed,
                  dataset=dataset_test_2, labels=labels_dataset_2,
                  embedding_extractor=feature_extractor)
