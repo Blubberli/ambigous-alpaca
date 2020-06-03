@@ -5,7 +5,7 @@ from utils.loss_functions import get_loss_cosine_distance
 from utils.data_loader import extract_all_labels
 import argparse
 import json
-from training_scripts.pretrain import save_predictions
+from training_scripts.train_simple_ranking import save_predictions
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 # from training_scripts.train_simple_ranking import save_predictions
 from utils import StaticEmbeddingExtractor, BertExtractor
