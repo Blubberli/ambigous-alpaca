@@ -21,13 +21,15 @@ class PretrainTransweighTest(unittest.TestCase):
     def setUp(self):
         self._data_path = pathlib.Path(__file__).parent.absolute().joinpath("data_ranking/train.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
-            "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
+            "embeddings/twe-adj-n.fifu"))
         self._pretrain_dataset = StaticRankingDataset(self._data_path, self._embedding_path, head="head",
                                                       mod="modifier", phrase="phrase", separator=" ")
-        self._contextualized_dataset = ContextualizedRankingDataset(data_path="data_ranking/attributes.txt", mod="modifier",
+        self._contextualized_dataset = ContextualizedRankingDataset(data_path="data_ranking/attributes.txt",
+                                                                    mod="modifier",
                                                                     head="head", label="label",
                                                                     bert_model='bert-base-german-cased', batch_size=2,
                                                                     lower_case=False, max_len=10, separator=" ",
+                                                                    context=None,
                                                                     label_definition_path="data_ranking/attribute_definitions")
 
         modifier_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
@@ -104,9 +106,9 @@ class PretrainTransweighTest(unittest.TestCase):
         dataloader = DataLoader(self._pretrain_dataset, batch_size=3, shuffle=True, num_workers=2)
 
         data = next(iter(dataloader))
-        np.testing.assert_equal(data["w1"].shape, [3, 300])
-        np.testing.assert_equal(data["w2"].shape, [3, 300])
-        np.testing.assert_equal(data["l"].shape, [3, 300])
+        np.testing.assert_equal(data["w1"].shape, [3, 200])
+        np.testing.assert_equal(data["w2"].shape, [3, 200])
+        np.testing.assert_equal(data["l"].shape, [3, 200])
 
     def test_contextualized(self):
         dataloader = DataLoader(self._contextualized_dataset, batch_size=3, shuffle=True, num_workers=2)
@@ -115,3 +117,4 @@ class PretrainTransweighTest(unittest.TestCase):
         np.testing.assert_equal(data["w2"].shape, [3, 768])
         np.testing.assert_equal(data["l"].shape, [3, 768])
         np.testing.assert_equal(len(data["label"]), 3)
+        np.testing.assert_equal(data["phrase"].shape, [3, 768])

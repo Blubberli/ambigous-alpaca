@@ -450,6 +450,7 @@ class ContextualizedRankingDataset(Dataset):
         self._definitions = pandas.read_csv(label_definition_path, delimiter="\t", index_col=False)
         self._modifier_words = list(self.data[mod])
         self._head_words = list(self.data[head])
+        self._phrases = [self.modifier_words[i] + " " + self.head_words[i] for i in range(len(self.data))]
         if context:
             self._context_sentences = list(self.data[context])
         else:
@@ -478,11 +479,14 @@ class ContextualizedRankingDataset(Dataset):
                                                  simple_phrases=self.context_sentences)
         word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.context_sentences)
         label_embeddings = self.lookup_embedding(target_words=self.labels, simple_phrases=self._label_definitions)
+        phrase_embeddings = self.lookup_embedding(target_words=self.phrases, simple_phrases=self.context_sentences)
         word1_embeddings = F.normalize(word1_embeddings, p=2, dim=1)
         word2_embeddings = F.normalize(word2_embeddings, p=2, dim=1)
         label_embeddings = F.normalize(label_embeddings, p=2, dim=1)
+        phrase_embeddings = F.normalize(phrase_embeddings, p=2, dim=1)
         return [
-            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i]}
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i],
+             "phrase": phrase_embeddings[i]}
             for i in
             range(len(self.labels))]
 
@@ -503,6 +507,10 @@ class ContextualizedRankingDataset(Dataset):
     @property
     def head_words(self):
         return self._head_words
+
+    @property
+    def phrases(self):
+        return self._phrases
 
     @property
     def context_sentences(self):

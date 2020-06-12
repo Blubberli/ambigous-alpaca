@@ -2,7 +2,7 @@ import torch
 from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
     PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
 from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker, \
-    TransweighJointRanker, MatrixJointRanker, FullAdditive
+    TransweighJointRanker, MatrixJointRanker, FullAdditive, TransweighJointContextualized
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, StaticRankingDataset, ContextualizedRankingDataset
@@ -89,6 +89,11 @@ def init_classifier(config):
                                            dropout_rate=config["model"]["dropout"],
                                            normalize_embeddings=config["model"]["normalize_embeddings"],
                                            transformations=config["model"]["transformations"])
+    if config["model"]["type"] == "joint_ranking_bert":
+        classifier = TransweighJointContextualized(input_dim=config["model"]["input_dim"],
+                                                   dropout_rate=config["model"]["dropout"],
+                                                   normalize_embeddings=config["model"]["normalize_embeddings"],
+                                                   transformations=config["model"]["transformations"])
     if config["model"]["type"] == "joint_ranking_matrix":
         assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
             1] == 1.0, "the task weights have to sum to 1"
@@ -131,24 +136,25 @@ def get_datasets(config):
                 mod = config["data_loader"]["modifier"]
                 head = config["data_loader"]["head"]
                 definition_file = config["data_loader"]["definitions"]
+                context = config["data_loader"]["context"]
                 dataset_train = ContextualizedRankingDataset(data_path=config["train_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
                                                              batch_size=batch_size,
-                                                             label=label, mod=mod, head=head,
+                                                             label=label, mod=mod, head=head, context=context,
                                                              label_definition_path=definition_file)
                 dataset_valid = ContextualizedRankingDataset(data_path=config["validation_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
-                                                             batch_size=batch_size,
+                                                             batch_size=batch_size, context=context,
                                                              label=label, mod=mod, head=head,
                                                              label_definition_path=definition_file)
                 dataset_test = ContextualizedRankingDataset(data_path=config["test_data_path"],
                                                             bert_model=bert_model, lower_case=lower_case,
                                                             max_len=max_len, separator=separator,
-                                                            batch_size=batch_size,
+                                                            batch_size=batch_size, context=context,
                                                             label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                            label_definition_path=definition_file)
             else:
                 # phrase only
                 dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
