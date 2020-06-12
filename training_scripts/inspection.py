@@ -1,14 +1,16 @@
 import torch
 from utils.training_utils import get_datasets, init_classifier
-from utils import StaticRankingDataset
+from utils import StaticRankingDataset, ContextualizedRankingDataset
 from utils.loss_functions import get_loss_cosine_distance
 from utils.data_loader import extract_all_labels
 import argparse
 import json
+from collections import defaultdict, Counter
 from training_scripts.train_simple_ranking import save_predictions
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 # from training_scripts.train_simple_ranking import save_predictions
 from utils import StaticEmbeddingExtractor, BertExtractor
+import pandas as pd
 import numpy
 from training_scripts.evaluation import class_performance_nearest_neighbour, confusion_matrix_ranking
 import collections
@@ -143,17 +145,43 @@ def nearest_neighbours_static(predicted_vectors, feature_extractor, dataset, all
     labels = dataset.phrases
     label_embeddings = numpy.array(feature_extractor.get_array_embeddings(all_labels))
     index2label = dict(zip(range(len(all_labels)), all_labels))
-    f = open(save_name + "_nearest_neighbours.txt", "w")
+    #f = open(save_name + "_nearest_neighbours.txt", "w")
+    label2closest_labels = defaultdict(list)
     for i in range(predicted_vectors.shape[0]):
         vec = predicted_vectors[i]
         label = labels[i]
         phrase = modifier[i] + " " + heads[i]
         vec2label_sim = get_nearest_neighbours_for_given_list(vec, label_embeddings, index2label)
+
         top_labels = [el[0] for el in vec2label_sim]
+        for el in top_labels[:5]:
+            #if el != label:
+            label2closest_labels[label].append(el)
         general_neighbours = feature_extractor.embeds.embedding_similarity(vec)
         s = "phrase: %s \n correct label: %s\n top predicted labels: %s \n general close words: %s\n" % (
             phrase, label, str(top_labels[:5]), str(general_neighbours[:5]))
-        f.write(s)
+        #f.write(s)
+    #f.close()
+    write_closest_attributes_per_attribute(label2closest_labels, save_name + "nearest_labels_with_correct.txt")
+
+
+def write_closest_attributes_per_attribute(label2closest_labels, save_path):
+    """
+    This method writes the closest attributes for the predicted representations that are not the correct label.
+    :param label2closest_labels:
+    :param save_path:
+    :return:
+    """
+    f = open(save_path, "w")
+    for label, other in label2closest_labels.items():
+        freqs = Counter(other)
+        top5 = freqs.most_common(5)
+        f.write(label + "\t")
+        for el in top5:
+            f.write(el[0] + ":")
+            f.write(str(el[1]))
+            f.write(", ")
+        f.write("\n")
     f.close()
 
 
@@ -171,15 +199,32 @@ def get_dataset(config, data_path):
     head = config["data_loader"]["head"]
     label = config["data_loader"]["label"]
     if config["feature_extractor"]["contextualized_embeddings"]:
-        # a contextualizedrankingdataset will be contructed
-        pass
+        bert_parameter = config["feature_extractor"]["contextualized"]["bert"]
+        bert_model = bert_parameter["model"]
+        max_len = bert_parameter["max_sent_len"]
+        lower_case = bert_parameter["lower_case"]
+        batch_size = bert_parameter["batch_size"]
+        mod = config["data_loader"]["modifier"]
+        head = config["data_loader"]["head"]
+        definition_file = config["data_loader"]["definitions"]
+        context = config["data_loader"]["context"]
+        dataset = ContextualizedRankingDataset(data_path=config["train_data_path"],
+                                                     bert_model=bert_model, lower_case=lower_case,
+                                                     max_len=max_len, separator=separator,
+                                                     batch_size=batch_size,
+                                                     label=label, mod=mod, head=head, context=context,
+                                                     label_definition_path=definition_file)
+        feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
+                                          batch_size=batch_size)
     else:
         embedding_path = config["feature_extractor"]["static"]["pretrained_model"]
-        dataset = PretrainCompmodelDataset(data_path=data_path,
-                                           embedding_path=embedding_path, separator=separator,
-                                           phrase=label, mod=mod, head=head)
+        dataset = StaticRankingDataset(data_path=data_path,
+                                       embedding_path=embedding_path, separator=separator,
+                                       phrase=label, mod=mod, head=head)
+        feature_extractor = StaticEmbeddingExtractor(
+            path_to_embeddings=training_config["feature_extractor"]["static"]["pretrained_model"])
 
-    return dataset
+    return dataset, feature_extractor
 
 
 if __name__ == '__main__':
@@ -196,11 +241,12 @@ if __name__ == '__main__':
 
     prediction_path_dev = argp.save_name + "_dev_predictions.npy"
     rank_path_dev = argp.save_name + "_dev_ranks.txt"
-    dataset = get_dataset(config=training_config, data_path=argp.test_data)
+    dataset, feature_extractor = get_dataset(config=training_config, data_path=argp.test_data)
     data_loader = torch.utils.data.DataLoader(dataset,
                                               batch_size=len(dataset),
                                               shuffle=False,
                                               num_workers=0)
+
     if argp.labels:
         print("extract labels from file")
     else:
@@ -209,16 +255,44 @@ if __name__ == '__main__':
                                     test_data=training_config["test_data_path"],
                                     separator=training_config["data_loader"]["separator"]
                                     , label=training_config["data_loader"]["phrase"])
+
+    predict_simple_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
+                                                       training_config=training_config, save_path=argp.save_name)
+    ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
+                                   path_to_predictions=argp.save_name + "attribute_predictions.npy", y_label="label",
+                                   max_rank=49)
+    confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
+    results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
+
+    import sys
+    sys.exit()
     sim_dic, rep_dic = predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
                                                        training_config=training_config, save_path=argp.save_name)
-    feature_extractor = StaticEmbeddingExtractor(
-        path_to_embeddings=training_config["feature_extractor"]["static"]["pretrained_model"])
-    # nearest_neighbours_static(rep_dic["reconstructed"], feature_extractor, dataset, labels,
-    # argp.save_name+"_reconstructed")
-    # nearest_neighbours_static(rep_dic["attribute"], feature_extractor, dataset, labels, argp.save_name+"_attribute")
-    # nearest_neighbours_static(rep_dic["combined"], feature_extractor, dataset, labels, argp.save_name+"_combined")
+    sim_file = open(argp.save_name + "_representation_similarities.txt", "w")
+    for k, v in sim_dic.items():
+        sim_file.write(k + " : " + str(v) + "\n")
+    sim_file.close()
+
+    nearest_neighbours_static(rep_dic["reconstructed"], feature_extractor, dataset, labels,
+                              argp.save_name + "_reconstructed")
+    nearest_neighbours_static(rep_dic["attribute"], feature_extractor, dataset, labels, argp.save_name + "_attribute")
+    nearest_neighbours_static(rep_dic["combined"], feature_extractor, dataset, labels, argp.save_name + "_combined")
+
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
-                                   path_to_predictions=argp.save_name + "combined_predictions.npy", y_label="phrase",
+                                   path_to_predictions=argp.save_name + "combined_predictions.npy", y_label="label",
                                    max_rank=49)
     confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "combined_predictions.npy")
     results = class_performance_nearest_neighbour(ranker, argp.save_name + "combined_predictions.npy")
+
+    ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
+                                   path_to_predictions=argp.save_name + "attribute_predictions.npy", y_label="label",
+                                   max_rank=49)
+    confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
+    results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
+
+    ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
+                                   path_to_predictions=argp.save_name + "reconstructed_predictions.npy",
+                                   y_label="label",
+                                   max_rank=49)
+    confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "reconstructed_predictions.npy")
+    results = class_performance_nearest_neighbour(ranker, argp.save_name + "reconstructed_predictions.npy")

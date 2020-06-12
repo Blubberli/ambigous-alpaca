@@ -42,10 +42,10 @@ def class_performance_nearest_neighbour(ranker, save_path):
     data = {}
     relations, prec_1, prec_5, quart, accuracy, sim = [], [], [], [], [], []
     for rel, v in relation2ranks.items():
-        presicion_1 = NearestNeigbourRanker.precision_at_rank(1, v)
-        presiction_5 = NearestNeigbourRanker.precision_at_rank(5, v)
+        presicion_1 = np.round(NearestNeigbourRanker.precision_at_rank(1, v), decimals=3)
+        presiction_5 = np.round(NearestNeigbourRanker.precision_at_rank(5, v), decimals=3)
         quartiles, _ = Ranker.calculate_quartiles(v)
-        acc = accuracy_score(y_true=[1] * len(relation2correct[rel]), y_pred=relation2correct[rel])
+        acc = np.round(accuracy_score(y_true=[1] * len(relation2correct[rel]), y_pred=relation2correct[rel]), decimals=3)
         average_sim = np.average(np.array(relation2comp_similarities[rel]))
         relations.append(rel)
         prec_1.append(presicion_1)
@@ -54,7 +54,7 @@ def class_performance_nearest_neighbour(ranker, save_path):
         string_quartiles = " ".join(quartiles)
         quart.append(string_quartiles)
         accuracy.append(acc)
-        sim.append(average_sim)
+        sim.append(np.round(average_sim, decimals=2))
     data["relation"] = relations
     data["p@1"] = prec_1
     data["p@5"] = prec_5
@@ -62,7 +62,7 @@ def class_performance_nearest_neighbour(ranker, save_path):
     data["accuracy"] = accuracy
     data["average cosine similarity"] = sim
     df = pd.DataFrame(data=data)
-    df.to_csv(save_path + "_per_class_results.csv")
+    df.to_csv(save_path + "_per_class_results.csv", sep="\t")
     return df
 
 

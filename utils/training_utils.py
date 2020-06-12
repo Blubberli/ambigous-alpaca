@@ -129,23 +129,24 @@ def get_datasets(config):
                 mod = config["data_loader"]["modifier"]
                 head = config["data_loader"]["head"]
                 definition_file = config["data_loader"]["definitions"]
+                context = config["data_loader"]["context"]
                 dataset_train = ContextualizedRankingDataset(data_path=config["train_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
                                                              batch_size=batch_size,
-                                                             label=label, mod=mod, head=head,
+                                                             label=label, mod=mod, head=head, context=context,
                                                              label_definition_path=definition_file)
                 dataset_valid = ContextualizedRankingDataset(data_path=config["validation_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
                                                              batch_size=batch_size,
-                                                             label=label, mod=mod, head=head,
+                                                             label=label, mod=mod, head=head,context=context,
                                                              label_definition_path=definition_file)
                 dataset_test = ContextualizedRankingDataset(data_path=config["test_data_path"],
                                                             bert_model=bert_model, lower_case=lower_case,
                                                             max_len=max_len, separator=separator,
                                                             batch_size=batch_size,
-                                                            label=label, mod=mod, head=head,
+                                                            label=label, mod=mod, head=head,context=context,
                                                              label_definition_path=definition_file)
             else:
                 # phrase only
