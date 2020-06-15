@@ -45,8 +45,6 @@ class MatrixJointRanker(nn.Module):
 
         if self.normalize_embeddings:
             self._final_composed_phrase = F.normalize(self._final_composed_phrase, p=2, dim=1)
-            self._representation_1 = F.normalize(self._representation_1, p=2, dim=1)
-            self._representation_2 = F.normalize(self._representation_2, p=2, dim=1)
 
         return self.final_composed_phrase, self.representation_1, self.representation_2
 
