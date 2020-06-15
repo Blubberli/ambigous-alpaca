@@ -2,7 +2,7 @@ import torch
 from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
     PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
 from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker, \
-    TransweighJointRanker, MatrixJointRanker, FullAdditive
+    TransweighJointRanker, MatrixJointRanker, FullAdditive, FullAdditiveJointRanker
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, StaticRankingDataset, ContextualizedRankingDataset
@@ -92,7 +92,7 @@ def init_classifier(config):
                                        dropout_rate=config["model"]["dropout"],
                                        normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking_full_additive":
-        classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
+        classifier = FullAdditiveJointRanker(input_dim=config["model"]["input_dim"],
                                        dropout_rate=config["model"]["dropout"],
                                        normalize_embeddings=config["model"]["normalize_embeddings"])
 
