@@ -83,15 +83,15 @@ def init_classifier(config):
                                   dropout_rate=config["model"]["dropout"],
                                   normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking":
-        assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
-            1] == 1.0, "the task weights have to sum to 1"
         classifier = TransweighJointRanker(input_dim=config["model"]["input_dim"],
                                            dropout_rate=config["model"]["dropout"],
                                            normalize_embeddings=config["model"]["normalize_embeddings"],
                                            transformations=config["model"]["transformations"])
     if config["model"]["type"] == "joint_ranking_matrix":
-        assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
-            1] == 1.0, "the task weights have to sum to 1"
+        classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
+                                       dropout_rate=config["model"]["dropout"],
+                                       normalize_embeddings=config["model"]["normalize_embeddings"])
+    if config["model"]["type"] == "joint_ranking_full_additive":
         classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
                                        dropout_rate=config["model"]["dropout"],
                                        normalize_embeddings=config["model"]["normalize_embeddings"])
