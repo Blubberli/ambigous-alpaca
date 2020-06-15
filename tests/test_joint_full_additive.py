@@ -19,8 +19,8 @@ class JointFullAdditiveRanking(unittest.TestCase):
     """
 
     def setUp(self):
-        self._data_path_1 = pathlib.Path(__file__).parent.absolute().joinpath("/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/Data/test_data_for_ranking_tests/test.txt")
-        self._data_path_2 = pathlib.Path(__file__).parent.absolute().joinpath("/Users/ehuber/Documents/ambiguous_alpaca/ambigous-alpaca/Data/test_data_for_ranking_tests/val.txt")
+        self._data_path_1 = pathlib.Path(__file__).parent.absolute().joinpath("data_pretraining/train.txt")
+        self._data_path_2 = pathlib.Path(__file__).parent.absolute().joinpath("data_pretraining/test.txt")
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
         self._dataset_1 = StaticRankingDataset(self._data_path_1, self._embedding_path, head="head",
