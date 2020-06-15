@@ -27,9 +27,10 @@ class NearestNeigbourRanker:
         # load composed predictions
         self._predicted_embeddings = np.load(path_to_predictions, allow_pickle=True)
         self._embeddings = embedding_extractor
-        data = next(iter(data_loader))
+        self._data = next(iter(data_loader))
+        self._data_loder = data_loader
         # the correct labels are stored here
-        self._true_labels = data[y_label]
+        self._true_labels = self.data[y_label]
         self._max_rank = max_rank
 
         # construct label embedding matrix, embeddings of labels are looked up in the original embeddings
@@ -183,3 +184,11 @@ class NearestNeigbourRanker:
     @property
     def average_similarity(self):
         return self._average_similarity
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def data_loader(self):
+        return self._data_loder

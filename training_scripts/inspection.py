@@ -12,7 +12,7 @@ from training_scripts.nearest_neighbour import NearestNeigbourRanker
 from utils import StaticEmbeddingExtractor, BertExtractor
 import pandas as pd
 import numpy
-from training_scripts.evaluation import class_performance_nearest_neighbour, confusion_matrix_ranking
+from training_scripts.evaluation import class_performance_nearest_neighbour, confusion_matrix_ranking, performance_per_adjective
 import collections
 
 
@@ -256,13 +256,24 @@ if __name__ == '__main__':
                                     separator=training_config["data_loader"]["separator"]
                                     , label=training_config["data_loader"]["phrase"])
 
-    predict_simple_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
-                                                       training_config=training_config, save_path=argp.save_name)
+    predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
+                                    training_config=training_config, save_path=argp.save_name)
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "attribute_predictions.npy", y_label="label",
                                    max_rank=49)
-    confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
-    results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
+    performance_per_adjective(ranker, argp.save_name + "_attribute_predictions_")
+    ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
+                                   path_to_predictions=argp.save_name + "combined_predictions.npy", y_label="label",
+                                   max_rank=49)
+    performance_per_adjective(ranker, argp.save_name + "_combined_predictions_")
+    ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
+                                   path_to_predictions=argp.save_name + "reconstructed_predictions.npy",
+                                   y_label="label",
+                                   max_rank=49)
+    performance_per_adjective(ranker, argp.save_name + "_reconstructed_predictions_")
+
+    #confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
+    #results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
 
     import sys
     sys.exit()

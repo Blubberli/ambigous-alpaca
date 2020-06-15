@@ -15,6 +15,31 @@ from sklearn.metrics import accuracy_score
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 
 
+def performance_per_adjective(ranker, save_path):
+    adj2attribute_accuracy = {}
+    #print(ranker.data)
+    modifier = list(ranker.data_loader.dataset._modifier_words)
+    for i in range(len(ranker.true_labels)):
+        adj = modifier[i]
+        true_label = ranker.true_labels[i]
+        predicted_label = ranker.predicted_labels[i]
+        cosine_similarity = ranker.composed_similarities[i]
+        if adj not in adj2attribute_accuracy:
+            adj2attribute_accuracy[adj] = defaultdict(list)
+        if true_label == predicted_label:
+            adj2attribute_accuracy[adj][true_label].append(1)
+        else:
+            adj2attribute_accuracy[adj][true_label].append(0)
+    f1 = open(save_path + "_adj2attribute_accuracy.csv", "w")
+    for adj, classes in adj2attribute_accuracy.items():
+        f1.write(adj + "\t")
+        for relation, correct in classes.items():
+            rel_accuracy = accuracy_score(y_true=len(correct) * [1], y_pred=correct)
+            rel_accuracy = np.round(rel_accuracy, decimals=3)
+            f1.write(relation + " : " + str(rel_accuracy) + " # ")
+        f1.write("\n")
+    f1.close()
+
 def class_performance_nearest_neighbour(ranker, save_path):
     """
     The following method creates a dataframe that stores all results for each separate class
