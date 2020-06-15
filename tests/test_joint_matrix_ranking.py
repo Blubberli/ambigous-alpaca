@@ -24,17 +24,16 @@ class JointMatrixRanking(unittest.TestCase):
         self._embedding_path = str(pathlib.Path(__file__).parent.absolute().joinpath(
             "embeddings/german-skipgram-mincount-30-ctx-10-dims-300.fifu"))
         self._dataset_1 = StaticRankingDataset(self._data_path_1, self._embedding_path, head="head",
-                                               mod="modifier", phrase="phrase", separator=" ")
+                                               mod="modifier", phrase="label", separator=" ")
         self._dataset_2 = StaticRankingDataset(self._data_path_2, self._embedding_path, head="head",
-                                               mod="modifier", phrase="phrase", separator=" ")
+                                               mod="modifier", phrase="label", separator=" ")
         modifier_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         head_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         gold_composed = F.normalize(torch.rand((50, 100)), dim=1)
         device = torch.device("cpu")
         self.input_1 = {"w1": modifier_embeddings, "w2": head_embeddings, "l": gold_composed, "device": device}
         self.input_2 = {"w1": modifier_embeddings, "w2": head_embeddings, "l": gold_composed, "device": device}
-        self.model = MatrixJointRanker(input_dim=100, dropout_rate=0.0, normalize_embeddings=True,
-                                       rep1_weight=0.3, rep2_weight=0.7)
+        self.model = MatrixJointRanker(input_dim=100, dropout_rate=0.0, normalize_embeddings=True)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.1)
 
     @staticmethod
