@@ -166,7 +166,8 @@ def predict(test_loader, model, device):
         test_loss_att.append(loss_att.item())
         test_loss_reconstructed.append(loss_reconstructed.item())
         test_loss_final.append(loss_final.item())
-        orig_phrases.append(batch["phrase"])
+        test_loss_final.append(loss_final.item())
+        orig_phrases.append(batch["label"])
     orig_phrases = [item for sublist in orig_phrases for item in sublist]
     predictions_final_rep = np.array(predictions_final_rep)
     predictions_attribute_rep = np.array(predictions_attribute_rep)
@@ -214,19 +215,19 @@ def evaluate(predictions_final_phrase, predictions_att_rep, predictions_reconstr
                                              embedding_extractor=embedding_extractor,
                                              data_loader=rank_loader,
                                              all_labels=labels,
-                                             y_label="phrase", max_rank=1000)
+                                             y_label="label", max_rank=1000)
     ranker_attribute.save_ranks(ranks_att_rep)
     ranker_reconstructed = NearestNeigbourRanker(path_to_predictions=predictions_reconstructed_rep,
                                                  embedding_extractor=embedding_extractor,
                                                  data_loader=rank_loader,
                                                  all_labels=labels,
-                                                 y_label="phrase", max_rank=1000)
+                                                 y_label="label", max_rank=1000)
     ranker_reconstructed.save_ranks(ranks_reconstructed_rep)
     ranker_final_rep = NearestNeigbourRanker(path_to_predictions=predictions_final_phrase,
                                              embedding_extractor=embedding_extractor,
                                              data_loader=rank_loader,
                                              all_labels=labels,
-                                             y_label="phrase", max_rank=1000)
+                                             y_label="label", max_rank=1000)
     ranker_final_rep.save_ranks(ranks_final_phrase)
 
     logger.info(("result for learned attribute representation"))
