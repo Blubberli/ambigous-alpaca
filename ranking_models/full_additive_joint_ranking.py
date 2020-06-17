@@ -23,8 +23,8 @@ class FullAdditiveJointRanker(nn.Module):
         """
         super(FullAdditiveJointRanker, self).__init__()
 
-        self._general_adj_matrix = nn.Linear(input_dim, input_dim)
-        self._general_noun_matrix = nn.Linear(input_dim, input_dim)
+        self._general_adj_matrix = nn.Parameter(torch.eye(input_dim), requires_grad=True)
+        self._general_noun_matrix = nn.Parameter(torch.eye(input_dim), requires_grad=True)
 
         self._adj_matrix_1 = nn.Parameter(torch.eye(input_dim), requires_grad=True)
         self._noun_matrix_1 = nn.Parameter(torch.eye(input_dim), requires_grad=True)
@@ -44,8 +44,14 @@ class FullAdditiveJointRanker(nn.Module):
         :return: the final composed phrase, representation 1, representation 2
         """
         device = batch["device"]
-        adj_vector = self._general_adj_matrix(batch["w1"].to(device))
-        noun_vector = self._general_noun_matrix(batch["w2"].to(device))
+
+        word_1 = batch["w1"].to(device)
+        word_2 = batch["w2"].to(device)
+
+        # general transformation
+        adj_vector = word_1.matmul(self._general_adj_matrix)
+        noun_vector = word_2.matmul(self._general_noun_matrix)
+
         if self.normalize_embeddings:
             adj_vector = F.normalize(adj_vector, p=2, dim=1)
             noun_vector = F.normalize(noun_vector, p=2, dim=1)
