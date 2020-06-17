@@ -87,7 +87,6 @@ def predict(test_loader, model, device):
     """
     test_loss = []
     predictions = []
-    orig_phrases = []
     model.to(device)
     for batch in test_loader:
         batch["device"] = device
@@ -96,10 +95,8 @@ def predict(test_loader, model, device):
             predictions.append(pred.detach().numpy())
         loss = get_loss_cosine_distance(composed_phrase=out, original_phrase=batch["l"])
         test_loss.append(loss.item())
-        orig_phrases.append(batch["phrase"])
-    orig_phrases = [item for sublist in orig_phrases for item in sublist]
     predictions = np.array(predictions)
-    return predictions, np.average(test_loss), orig_phrases
+    return predictions, np.average(test_loss)
 
 
 def save_predictions(predictions, path):
@@ -217,7 +214,7 @@ if __name__ == "__main__":
 
     if valid_model:
         logger.info("generating predictions for validation data...")
-        valid_predictions, valid_loss, valid_phrases = predict(valid_loader, valid_model, device)
+        valid_predictions, valid_loss = predict(valid_loader, valid_model, device)
         save_predictions(predictions=valid_predictions, path=prediction_path_dev)
         logger.info("saved predictions to %s" % prediction_path_dev)
         logger.info("validation loss: %.5f" % (valid_loss))
@@ -226,7 +223,7 @@ if __name__ == "__main__":
                                                  embedding_extractor=feature_extractor,
                                                  data_loader=rank_loader,
                                                  all_labels=labels,
-                                                 y_label="phrase", max_rank=1000)
+                                                 y_label="label", max_rank=1000)
         ranker_attribute.save_ranks(rank_path_dev)
 
         logger.info("result for learned attribute representation")
@@ -239,7 +236,7 @@ if __name__ == "__main__":
         logger.info("saved ranks to %s" % rank_path_dev)
         if config["eval_on_test"]:
             logger.info("generating predictions for test data...")
-            test_predictions, test_loss, test_phrases = predict(test_loader, valid_model, device)
+            test_predictions, test_loss = predict(test_loader, valid_model, device)
             save_predictions(predictions=test_predictions, path=prediction_path_test)
             logger.info("saved predictions to %s" % prediction_path_test)
             logger.info("test loss: %.5f" % (test_loss))
@@ -248,7 +245,7 @@ if __name__ == "__main__":
                                                      embedding_extractor=feature_extractor,
                                                      data_loader=rank_loader,
                                                      all_labels=labels,
-                                                     y_label="phrase", max_rank=1000)
+                                                     y_label="label", max_rank=1000)
             ranker_attribute.save_ranks(rank_path_dev)
 
             logger.info("result for learned attribute representation")
