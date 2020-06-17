@@ -163,9 +163,10 @@ class BertExtractor:
             last_hidden_states, all_layers = self.get_bert_vectors(batch_input_ids=batch_input_ids,
                                                                    batch_attention_mask=batch_attention_mask,
                                                                    batch_token_type_ids=batch_token_type_ids)
+            mean_layers = self.get_mean_layer_pooling(all_layers, 0, 11)
             for i in range(len(current_sentences)):
                 target_word_indices = self.word_indices_in_sentence(current_sentences[i], current_target_words[i])
-                token_embeddings = last_hidden_states[i]
+                token_embeddings = mean_layers[i]
                 contextualized_emb = self.get_single_word_embedding(token_embeddings=token_embeddings,
                                                                     target_word_indices=target_word_indices)
                 contextualized_embeddings.append(contextualized_emb.to("cpu"))
