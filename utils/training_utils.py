@@ -90,11 +90,13 @@ def init_classifier(config):
     if config["model"]["type"] == "joint_ranking_matrix":
         classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
                                        dropout_rate=config["model"]["dropout"],
-                                       normalize_embeddings=config["model"]["normalize_embeddings"])
+                                       normalize_embeddings=config["model"]["normalize_embeddings"],
+                                       non_linearity=config["model"]["non_linearity"])
     if config["model"]["type"] == "joint_ranking_full_additive":
         classifier = FullAdditiveJointRanker(input_dim=config["model"]["input_dim"],
-                                       dropout_rate=config["model"]["dropout"],
-                                       normalize_embeddings=config["model"]["normalize_embeddings"])
+                                             dropout_rate=config["model"]["dropout"],
+                                             normalize_embeddings=config["model"]["normalize_embeddings"],
+                                             non_linearity=config["model"]["non_linearity"])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
@@ -148,7 +150,7 @@ def get_datasets(config):
                                                             max_len=max_len, separator=separator,
                                                             batch_size=batch_size,
                                                             label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                            label_definition_path=definition_file)
             else:
                 # phrase only
                 dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
