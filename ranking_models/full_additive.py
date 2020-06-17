@@ -6,7 +6,7 @@ import utils.composition_functions as comp_functions
 
 class FullAdditive(nn.Module):
 
-    def __init__(self, input_dim, dropout_rate, normalize_embeddings):
+    def __init__(self, input_dim, normalize_embeddings):
         """
         This class contains the full additive composition model that can be used to train a model with the cosine
         distance loss
@@ -19,7 +19,6 @@ class FullAdditive(nn.Module):
         self._adj_matrix = nn.Parameter(torch.eye(input_dim), requires_grad=True)
         self._noun_matrix = nn.Parameter(torch.eye(input_dim), requires_grad=True)
 
-        self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
 
     def forward(self, batch):
@@ -53,10 +52,6 @@ class FullAdditive(nn.Module):
     @property
     def output_layer(self):
         return self._output_layer
-
-    @property
-    def dropout_rate(self):
-        return self._dropout_rate
 
     @property
     def adj_matrix(self):

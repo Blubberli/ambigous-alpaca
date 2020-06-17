@@ -15,7 +15,7 @@ class FullAdditiveJointRanker(nn.Module):
     :param normalize_embeddings: whether the composed representation should be normalized to unit length
     """
 
-    def __init__(self, input_dim, dropout_rate, normalize_embeddings):
+    def __init__(self, input_dim, normalize_embeddings, non_linearity):
         """
         :param input_dim: embedding dimension
         :param dropout_rate: dropout rate for regularization
@@ -32,8 +32,9 @@ class FullAdditiveJointRanker(nn.Module):
         self._adj_matrix_2 = nn.Parameter(torch.eye(input_dim), requires_grad=True)
         self._noun_matrix_2 = nn.Parameter(torch.eye(input_dim), requires_grad=True)
 
-        self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
+
+        self._non_linearity = non_linearity
 
     def forward(self, batch):
         """
@@ -51,7 +52,9 @@ class FullAdditiveJointRanker(nn.Module):
         # general transformation
         adj_vector = word_1.matmul(self._general_adj_matrix)
         noun_vector = word_2.matmul(self._general_noun_matrix)
-
+        if self._non_linearity:
+            adj_vector = F.relu(adj_vector)
+            noun_vector = F.relu(noun_vector)
         if self.normalize_embeddings:
             adj_vector = F.normalize(adj_vector, p=2, dim=1)
             noun_vector = F.normalize(noun_vector, p=2, dim=1)
@@ -115,9 +118,9 @@ class FullAdditiveJointRanker(nn.Module):
         return self._final_composed_phrase
 
     @property
-    def dropout_rate(self):
-        return self._dropout_rate
-
-    @property
     def normalize_embeddings(self):
         return self._normalize_embeddings
+
+    @property
+    def non_linearity(self):
+        return self._non_linearity
