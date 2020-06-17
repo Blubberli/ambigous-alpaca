@@ -31,6 +31,7 @@ class JointFullAdditiveRanking(unittest.TestCase):
         head_embeddings = F.normalize(torch.rand((50, 100)), dim=1)
         gold_composed = F.normalize(torch.rand((50, 100)), dim=1)
         device = torch.device("cpu")
+
         self.input_1 = {"w1": modifier_embeddings, "w2": head_embeddings, "l": gold_composed, "device": device}
         self.input_2 = {"w1": modifier_embeddings, "w2": head_embeddings, "l": gold_composed, "device": device}
         self.model = FullAdditiveJointRanker(input_dim=100, dropout_rate=0.0, normalize_embeddings=True)
@@ -67,8 +68,8 @@ class JointFullAdditiveRanking(unittest.TestCase):
         noun_1_before_training = self.access_named_parameter(self.model, "_noun_matrix_1")
         noun_2_before_training = self.access_named_parameter(self.model, "_noun_matrix_2")
 
-        general_adj_weights_before_training = self.access_named_parameter(self.model, "_general_adj_matrix.weight")
-        general_noun_weights_before_training = self.access_named_parameter(self.model, "_general_noun_matrix.weight")
+        general_adj_weights_before_training = self.access_named_parameter(self.model, "_general_adj_matrix")
+        general_noun_weights_before_training = self.access_named_parameter(self.model, "_general_noun_matrix")
 
         for epoch in range(0,5):
             self.optimizer.zero_grad()
@@ -85,9 +86,9 @@ class JointFullAdditiveRanking(unittest.TestCase):
             adj_2_after_training = self.access_named_parameter(self.model, "_adj_matrix_2")
             noun_1_after_training = self.access_named_parameter(self.model, "_noun_matrix_1")
             noun_2_after_training = self.access_named_parameter(self.model, "_noun_matrix_2")
-            general_adj_weights_after_training = self.access_named_parameter(self.model, "_general_adj_matrix.weight")
+            general_adj_weights_after_training = self.access_named_parameter(self.model, "_general_adj_matrix")
             general_noun_weights_after_training = self.access_named_parameter(self.model,
-                                                                               "_general_noun_matrix.weight")
+                                                                               "_general_noun_matrix")
             
         difference_adj1_layer = torch.sum(
             adj_1_before_training - adj_1_after_training ).item()
