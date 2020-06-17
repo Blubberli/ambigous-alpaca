@@ -80,7 +80,6 @@ def init_classifier(config):
                                     normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "full_additive_pretrain":
         classifier = FullAdditive(input_dim=config["model"]["input_dim"],
-                                  dropout_rate=config["model"]["dropout"],
                                   normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking":
         classifier = TransweighJointRanker(input_dim=config["model"]["input_dim"],
@@ -94,7 +93,6 @@ def init_classifier(config):
                                        non_linearity=config["model"]["non_linearity"])
     if config["model"]["type"] == "joint_ranking_full_additive":
         classifier = FullAdditiveJointRanker(input_dim=config["model"]["input_dim"],
-                                             dropout_rate=config["model"]["dropout"],
                                              normalize_embeddings=config["model"]["normalize_embeddings"],
                                              non_linearity=config["model"]["non_linearity"])
 
