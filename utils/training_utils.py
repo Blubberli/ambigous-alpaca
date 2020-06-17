@@ -2,7 +2,7 @@ import torch
 from classification_models import BasicTwoWordClassifier, TransweighTwoWordClassifier, TransferCompClassifier, \
     PhraseContextClassifier, MatrixTwoWordClassifier, MatrixTransferClassifier
 from ranking_models import TransweighPretrain, MatrixPretrain, MatrixTransferRanker, TransweighTransferRanker, \
-    TransweighJointRanker, MatrixJointRanker, FullAdditive
+    TransweighJointRanker, MatrixJointRanker, FullAdditive, FullAdditiveJointRanker
 
 from utils import SimplePhraseContextualizedDataset, SimplePhraseStaticDataset, \
     PhraseAndContextDatasetStatic, PhraseAndContextDatasetBert, StaticRankingDataset, ContextualizedRankingDataset
@@ -80,21 +80,21 @@ def init_classifier(config):
                                     normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "full_additive_pretrain":
         classifier = FullAdditive(input_dim=config["model"]["input_dim"],
-                                  dropout_rate=config["model"]["dropout"],
                                   normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking":
-        assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
-            1] == 1.0, "the task weights have to sum to 1"
         classifier = TransweighJointRanker(input_dim=config["model"]["input_dim"],
                                            dropout_rate=config["model"]["dropout"],
                                            normalize_embeddings=config["model"]["normalize_embeddings"],
                                            transformations=config["model"]["transformations"])
     if config["model"]["type"] == "joint_ranking_matrix":
-        assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
-            1] == 1.0, "the task weights have to sum to 1"
         classifier = MatrixJointRanker(input_dim=config["model"]["input_dim"],
                                        dropout_rate=config["model"]["dropout"],
-                                       normalize_embeddings=config["model"]["normalize_embeddings"])
+                                       normalize_embeddings=config["model"]["normalize_embeddings"],
+                                       non_linearity=config["model"]["non_linearity"])
+    if config["model"]["type"] == "joint_ranking_full_additive":
+        classifier = FullAdditiveJointRanker(input_dim=config["model"]["input_dim"],
+                                             normalize_embeddings=config["model"]["normalize_embeddings"],
+                                             non_linearity=config["model"]["non_linearity"])
 
     assert classifier, "no valid classifier name specified in the configuration"
     return classifier
@@ -148,7 +148,7 @@ def get_datasets(config):
                                                             max_len=max_len, separator=separator,
                                                             batch_size=batch_size,
                                                             label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                            label_definition_path=definition_file)
             else:
                 # phrase only
                 dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],
