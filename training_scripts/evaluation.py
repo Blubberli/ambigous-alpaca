@@ -11,13 +11,13 @@ from pathlib import Path
 import pandas as pd
 import seaborn as sn
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from training_scripts.nearest_neighbour import NearestNeigbourRanker
 
 
 def performance_per_adjective(ranker, save_path):
     adj2attribute_accuracy = {}
-    #print(ranker.data)
+    # print(ranker.data)
     modifier = list(ranker.data_loader.dataset._modifier_words)
     for i in range(len(ranker.true_labels)):
         adj = modifier[i]
@@ -39,6 +39,42 @@ def performance_per_adjective(ranker, save_path):
             f1.write(relation + " : " + str(rel_accuracy) + " # ")
         f1.write("\n")
     f1.close()
+
+
+def performance_per_phrase_type(ranker, collocations, free_phrases, save_path):
+    true_colloc = []
+    true_free = []
+    modifier = list(ranker.data_loader.dataset._modifier_words)
+    heads = list(ranker.data_loader.dataset._head_words)
+    for i in range(len(ranker.true_labels)):
+        adj = modifier[i]
+        noun = heads[i]
+        true_label = ranker.true_labels[i]
+        predicted_label = ranker.predicted_labels[i]
+        phrase = adj + " " + noun
+        if phrase in collocations:
+            if true_label == predicted_label:
+                true_colloc.append(1)
+            else:
+                true_colloc.append(0)
+        elif phrase in free_phrases:
+            if true_label == predicted_label:
+                true_free.append(1)
+            else:
+                true_free.append(0)
+    accuracy_colloc = accuracy_score(y_true=[1] * len(true_colloc), y_pred=true_colloc)
+    f1_colloc = f1_score(y_true=[1] * len(true_colloc), y_pred=true_colloc, average="weighted")
+    print(len(true_colloc))
+    print(len(true_free))
+    accuracy_free = accuracy_score(y_true=[1] * len(true_free), y_pred=true_free)
+    f1_free = f1_score(y_true=[1] * len(true_free), y_pred=true_free, average="weighted")
+    s = "accuracy collocations %.2f, f1 collocations : %.2f\n accuracy free phrases : %.2f, f1 free phrases : %.2f" % (
+        accuracy_colloc, f1_colloc, accuracy_free, f1_free)
+    f1 = open(save_path + "_phrasetypescores.txt", "w")
+    f1.write(s)
+    f1.close()
+
+
 
 def class_performance_nearest_neighbour(ranker, save_path):
     """
@@ -70,7 +106,8 @@ def class_performance_nearest_neighbour(ranker, save_path):
         presicion_1 = np.round(NearestNeigbourRanker.precision_at_rank(1, v), decimals=3)
         presiction_5 = np.round(NearestNeigbourRanker.precision_at_rank(5, v), decimals=3)
         quartiles, _ = Ranker.calculate_quartiles(v)
-        acc = np.round(accuracy_score(y_true=[1] * len(relation2correct[rel]), y_pred=relation2correct[rel]), decimals=3)
+        acc = np.round(accuracy_score(y_true=[1] * len(relation2correct[rel]), y_pred=relation2correct[rel]),
+                       decimals=3)
         average_sim = np.average(np.array(relation2comp_similarities[rel]))
         relations.append(rel)
         prec_1.append(presicion_1)
@@ -98,7 +135,7 @@ def confusion_matrix_ranking(ranker, save_path):
     :param save_path: the path to store the confusion matrix csv and plot
     """
     conf_matrix = confusion_matrix(ranker.true_labels, ranker.predicted_labels)
-    conf_matrix = np.transpose( np.transpose(conf_matrix) / conf_matrix.astype(np.float).sum(axis=1) )
+    conf_matrix = np.transpose(np.transpose(conf_matrix) / conf_matrix.astype(np.float).sum(axis=1))
     conf_matrix[np.isnan(conf_matrix)] = 0
     conf_matrix = np.round(conf_matrix, decimals=2)
     conf_matrix = conf_matrix * 100

@@ -12,7 +12,8 @@ from training_scripts.nearest_neighbour import NearestNeigbourRanker
 from utils import StaticEmbeddingExtractor, BertExtractor
 import pandas as pd
 import numpy
-from training_scripts.evaluation import class_performance_nearest_neighbour, confusion_matrix_ranking, performance_per_adjective
+from training_scripts.evaluation import class_performance_nearest_neighbour, confusion_matrix_ranking, \
+    performance_per_adjective, performance_per_phrase_type
 import collections
 
 
@@ -145,7 +146,7 @@ def nearest_neighbours_static(predicted_vectors, feature_extractor, dataset, all
     labels = dataset.phrases
     label_embeddings = numpy.array(feature_extractor.get_array_embeddings(all_labels))
     index2label = dict(zip(range(len(all_labels)), all_labels))
-    #f = open(save_name + "_nearest_neighbours.txt", "w")
+    # f = open(save_name + "_nearest_neighbours.txt", "w")
     label2closest_labels = defaultdict(list)
     for i in range(predicted_vectors.shape[0]):
         vec = predicted_vectors[i]
@@ -155,13 +156,13 @@ def nearest_neighbours_static(predicted_vectors, feature_extractor, dataset, all
 
         top_labels = [el[0] for el in vec2label_sim]
         for el in top_labels[:5]:
-            #if el != label:
+            # if el != label:
             label2closest_labels[label].append(el)
         general_neighbours = feature_extractor.embeds.embedding_similarity(vec)
         s = "phrase: %s \n correct label: %s\n top predicted labels: %s \n general close words: %s\n" % (
             phrase, label, str(top_labels[:5]), str(general_neighbours[:5]))
-        #f.write(s)
-    #f.close()
+        # f.write(s)
+    # f.close()
     write_closest_attributes_per_attribute(label2closest_labels, save_name + "nearest_labels_with_correct.txt")
 
 
@@ -209,11 +210,11 @@ def get_dataset(config, data_path):
         definition_file = config["data_loader"]["definitions"]
         context = config["data_loader"]["context"]
         dataset = ContextualizedRankingDataset(data_path=config["train_data_path"],
-                                                     bert_model=bert_model, lower_case=lower_case,
-                                                     max_len=max_len, separator=separator,
-                                                     batch_size=batch_size,
-                                                     label=label, mod=mod, head=head, context=context,
-                                                     label_definition_path=definition_file)
+                                               bert_model=bert_model, lower_case=lower_case,
+                                               max_len=max_len, separator=separator,
+                                               batch_size=batch_size,
+                                               label=label, mod=mod, head=head, context=context,
+                                               label_definition_path=definition_file)
         feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                           batch_size=batch_size)
     else:
@@ -236,6 +237,12 @@ if __name__ == '__main__':
     argp.add_argument("--labels")
     argp = argp.parse_args()
 
+    collocations = []
+    free = []
+    for line in open("/Users/nwitte/PycharmProjects/ambigous-alpaca/data/adj_splits/test_collocation_phrases.txt"):
+        collocations.append(line.strip())
+    for line in open("/Users/nwitte/PycharmProjects/ambigous-alpaca/data/adj_splits/test_free_phrases.txt"):
+        free.append(line.strip())
     with open(argp.training_config, 'r') as f:
         training_config = json.load(f)
 
@@ -261,21 +268,27 @@ if __name__ == '__main__':
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "attribute_predictions.npy", y_label="label",
                                    max_rank=49)
-    performance_per_adjective(ranker, argp.save_name + "_attribute_predictions_")
+    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "attribute")
+    # performance_per_adjective(ranker, argp.save_name + "_attribute_predictions_")
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "combined_predictions.npy", y_label="label",
                                    max_rank=49)
-    performance_per_adjective(ranker, argp.save_name + "_combined_predictions_")
+    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "combined")
+
+    # performance_per_adjective(ranker, argp.save_name + "_combined_predictions_")
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "reconstructed_predictions.npy",
                                    y_label="label",
                                    max_rank=49)
-    performance_per_adjective(ranker, argp.save_name + "_reconstructed_predictions_")
+    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "reconstructed")
 
-    #confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
-    #results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
+    # performance_per_adjective(ranker, argp.save_name + "_reconstructed_predictions_")
+
+    # confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
+    # results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
 
     import sys
+
     sys.exit()
     sim_dic, rep_dic = predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
                                                        training_config=training_config, save_path=argp.save_name)
