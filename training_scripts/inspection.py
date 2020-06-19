@@ -146,11 +146,12 @@ def nearest_neighbours_static(predicted_vectors, feature_extractor, dataset, all
     labels = dataset.phrases
     label_embeddings = numpy.array(feature_extractor.get_array_embeddings(all_labels))
     index2label = dict(zip(range(len(all_labels)), all_labels))
-    # f = open(save_name + "_nearest_neighbours.txt", "w")
+    f = open(save_name + "_nearest_neighbours.txt", "w")
     label2closest_labels = defaultdict(list)
     for i in range(predicted_vectors.shape[0]):
         vec = predicted_vectors[i]
         label = labels[i]
+        label = "unknown"
         phrase = modifier[i] + " " + heads[i]
         vec2label_sim = get_nearest_neighbours_for_given_list(vec, label_embeddings, index2label)
 
@@ -159,11 +160,12 @@ def nearest_neighbours_static(predicted_vectors, feature_extractor, dataset, all
             # if el != label:
             label2closest_labels[label].append(el)
         general_neighbours = feature_extractor.embeds.embedding_similarity(vec)
-        s = "phrase: %s \n correct label: %s\n top predicted labels: %s \n general close words: %s\n" % (
-            phrase, label, str(top_labels[:5]), str(general_neighbours[:5]))
-        # f.write(s)
-    # f.close()
-    write_closest_attributes_per_attribute(label2closest_labels, save_name + "nearest_labels_with_correct.txt")
+        #s = "phrase: %s \n correct label: %s\n top predicted labels: %s \n general close words: %s\n" % (
+        #    phrase, label, str(top_labels[:5]), str(general_neighbours[:5]))
+        s = phrase + "\t" + str(top_labels[:5]) + "\t" + str(general_neighbours[:5]) + "\n"
+        f.write(s)
+    f.close()
+    #write_closest_attributes_per_attribute(label2closest_labels, save_name + "_top_predictions.txt")
 
 
 def write_closest_attributes_per_attribute(label2closest_labels, save_path):
@@ -255,7 +257,9 @@ if __name__ == '__main__':
                                               num_workers=0)
 
     if argp.labels:
-        print("extract labels from file")
+        labels = []
+        for line in open(argp.labels):
+            labels.append(line.strip())
     else:
         labels = extract_all_labels(training_data=training_config["train_data_path"],
                                     validation_data=training_config["validation_data_path"],
@@ -263,33 +267,36 @@ if __name__ == '__main__':
                                     separator=training_config["data_loader"]["separator"]
                                     , label=training_config["data_loader"]["phrase"])
 
-    predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
+    sim_dic, rep_dic = predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
                                     training_config=training_config, save_path=argp.save_name)
+
+    nearest_neighbours_static(rep_dic["reconstructed"], feature_extractor, dataset, labels,
+                              argp.save_name + "_reconstructed")
+    nearest_neighbours_static(rep_dic["attribute"], feature_extractor, dataset, labels, argp.save_name + "_attribute")
+    nearest_neighbours_static(rep_dic["combined"], feature_extractor, dataset, labels, argp.save_name + "_combined")
+    import sys
+
+    sys.exit()
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "attribute_predictions.npy", y_label="label",
                                    max_rank=49)
-    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "attribute")
     # performance_per_adjective(ranker, argp.save_name + "_attribute_predictions_")
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "combined_predictions.npy", y_label="label",
                                    max_rank=49)
-    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "combined")
 
     # performance_per_adjective(ranker, argp.save_name + "_combined_predictions_")
     ranker = NearestNeigbourRanker(embedding_extractor=feature_extractor, all_labels=labels, data_loader=data_loader,
                                    path_to_predictions=argp.save_name + "reconstructed_predictions.npy",
                                    y_label="label",
                                    max_rank=49)
-    performance_per_phrase_type(ranker=ranker, collocations=collocations, free_phrases=free, save_path=argp.save_name + "reconstructed")
 
     # performance_per_adjective(ranker, argp.save_name + "_reconstructed_predictions_")
 
     # confusion_matrix_ranking(ranker=ranker, save_path=argp.save_name + "attribute_predictions.npy")
     # results = class_performance_nearest_neighbour(ranker, argp.save_name + "attribute_predictions.npy")
 
-    import sys
 
-    sys.exit()
     sim_dic, rep_dic = predict_joint_composition_model(model_path=argp.model_path, test_data_loader=data_loader,
                                                        training_config=training_config, save_path=argp.save_name)
     sim_file = open(argp.save_name + "_representation_similarities.txt", "w")
