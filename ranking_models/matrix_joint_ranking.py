@@ -10,8 +10,7 @@ class MatrixJointRanker(nn.Module):
     The model is a basic matrix composition model with two specific linear transformation for each type of semantic representation.
     """
 
-    def __init__(self, input_dim, dropout_rate, normalize_embeddings, rep1_weight,
-                 rep2_weight):
+    def __init__(self, input_dim, dropout_rate, normalize_embeddings, non_linearity):
         """
         :param input_dim: embedding dimension
         :param dropout_rate: dropout rate for regularization
@@ -25,8 +24,7 @@ class MatrixJointRanker(nn.Module):
         self._specific_matrix_2 = nn.Linear(input_dim, input_dim)
         self._dropout_rate = dropout_rate
         self._normalize_embeddings = normalize_embeddings
-        self._rep1_weight = rep1_weight
-        self._rep2_weight = rep2_weight
+        self._non_linearity = non_linearity
 
     def forward(self, batch):
         """
@@ -38,18 +36,18 @@ class MatrixJointRanker(nn.Module):
         """
         device = batch["device"]
         self._composed_phrase = self.compose(batch["w1"].to(device), batch["w2"].to(device))
+        if self._non_linearity:
+            self._composed_phrase = F.relu(self._composed_phrase)
         self._representation_1 = self._specific_matrix_1(self._composed_phrase)
         self._representation_2 = self._specific_matrix_2(self._composed_phrase)
         if self.normalize_embeddings:
             self._representation_1 = F.normalize(self._representation_1, p=2, dim=1)
             self._representation_2 = F.normalize(self._representation_2, p=2, dim=1)
 
-        self._final_composed_phrase = self.rep1_weight * self.representation_1 + self.rep2_weight * self.representation_2
+        self._final_composed_phrase = self.representation_1 + self.representation_2
 
         if self.normalize_embeddings:
             self._final_composed_phrase = F.normalize(self._final_composed_phrase, p=2, dim=1)
-            self._representation_1 = F.normalize(self._representation_1, p=2, dim=1)
-            self._representation_2 = F.normalize(self._representation_2, p=2, dim=1)
 
         return self.final_composed_phrase, self.representation_1, self.representation_2
 
@@ -104,9 +102,5 @@ class MatrixJointRanker(nn.Module):
         return self._representation_2
 
     @property
-    def rep1_weight(self):
-        return self._rep1_weight
-
-    @property
-    def rep2_weight(self):
-        return self._rep2_weight
+    def non_linearity(self):
+        return self._non_linearity
