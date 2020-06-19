@@ -80,7 +80,6 @@ def init_classifier(config):
                                     normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "full_additive_pretrain":
         classifier = FullAdditive(input_dim=config["model"]["input_dim"],
-                                  dropout_rate=config["model"]["dropout"],
                                   normalize_embeddings=config["model"]["normalize_embeddings"])
     if config["model"]["type"] == "joint_ranking":
         assert config["model"]["task_weights"][0] + config["model"]["task_weights"][
@@ -135,24 +134,32 @@ def get_datasets(config):
                 mod = config["data_loader"]["modifier"]
                 head = config["data_loader"]["head"]
                 definition_file = config["data_loader"]["definitions"]
+                load_bert_embeddings = config["data_loader"]["load_bert_embeddings"]
+                embedding_path = config["data_loader"]["embedding_path"]
                 dataset_train = ContextualizedRankingDataset(data_path=config["train_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
                                                              batch_size=batch_size,
                                                              label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                             label_definition_path=definition_file,
+                                                             load_bert_embeddings=load_bert_embeddings,
+                                                             bert_embedding_path=embedding_path + "/train")
                 dataset_valid = ContextualizedRankingDataset(data_path=config["validation_data_path"],
                                                              bert_model=bert_model, lower_case=lower_case,
                                                              max_len=max_len, separator=separator,
                                                              batch_size=batch_size,
                                                              label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                             label_definition_path=definition_file,
+                                                             load_bert_embeddings=load_bert_embeddings,
+                                                             bert_embedding_path=embedding_path + "/val")
                 dataset_test = ContextualizedRankingDataset(data_path=config["test_data_path"],
                                                             bert_model=bert_model, lower_case=lower_case,
                                                             max_len=max_len, separator=separator,
                                                             batch_size=batch_size,
                                                             label=label, mod=mod, head=head,
-                                                             label_definition_path=definition_file)
+                                                            label_definition_path=definition_file,
+                                                            load_bert_embeddings=load_bert_embeddings,
+                                                             bert_embedding_path=embedding_path + "/test")
             else:
                 # phrase only
                 dataset_train = SimplePhraseContextualizedDataset(data_path=config["train_data_path"],

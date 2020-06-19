@@ -362,7 +362,7 @@ class StaticRankingDataset(Dataset):
         word2_embeddings = self.lookup_embedding(self.head_words)
         label_embeddings = self.lookup_embedding(self.phrases)
         return [
-            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "phrase": self.phrases[i]}
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.phrases[i]}
             for i in
             range(len(self.phrases))]
 
@@ -430,7 +430,7 @@ class MultiRankingDataset(Dataset):
 class ContextualizedRankingDataset(Dataset):
 
     def __init__(self, data_path, bert_model, max_len, lower_case, batch_size, separator, mod, head,
-                 label, label_definition_path, context=None):
+                 label, label_definition_path, context=None, load_bert_embeddings=False, bert_embedding_path=None):
         """
         This Dataset can be used to train a composition model with contextualized embeddings to create attribute-like
         representations
@@ -450,11 +450,13 @@ class ContextualizedRankingDataset(Dataset):
         self._definitions = pandas.read_csv(label_definition_path, delimiter="\t", index_col=False)
         self._modifier_words = list(self.data[mod])
         self._head_words = list(self.data[head])
+        self._phrases = [self.modifier_words[i] + " " + self.head_words[i] for i in range(len(self.data))]
         if context:
             self._context_sentences = list(self.data[context])
         else:
             self._context_sentences = [self.modifier_words[i] + " " + self.head_words[i] for i in
                                        range(len(self.data))]
+
         self._labels = list(self.data[label])
         self._label2definition = dict(zip(list(self._definitions["label"]), list(self._definitions["definition"])))
         self._label_definitions = [self._label2definition[l] for l in self.labels]
@@ -463,6 +465,9 @@ class ContextualizedRankingDataset(Dataset):
 
         self._feature_extractor = BertExtractor(bert_model=bert_model, max_len=max_len, lower_case=lower_case,
                                                 batch_size=batch_size)
+        self._load_bert_embeddings = load_bert_embeddings
+        self._bert_embedding_path = bert_embedding_path
+
         self._samples = self.populate_samples()
 
     def lookup_embedding(self, simple_phrases, target_words):
@@ -474,15 +479,27 @@ class ContextualizedRankingDataset(Dataset):
         Looks up the embeddings for all modifier, heads and labels and stores them in a dictionary
         :return: List of dictionary objects, each storing the modifier, head and phrase embeddings (w1, w2, l)
         """
-        word1_embeddings = self.lookup_embedding(target_words=self.modifier_words,
-                                                 simple_phrases=self.context_sentences)
-        word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.context_sentences)
-        label_embeddings = self.lookup_embedding(target_words=self.labels, simple_phrases=self._label_definitions)
-        word1_embeddings = F.normalize(word1_embeddings, p=2, dim=1)
-        word2_embeddings = F.normalize(word2_embeddings, p=2, dim=1)
-        label_embeddings = F.normalize(label_embeddings, p=2, dim=1)
+        if self.load_bert_embeddings:
+            word1_embeddings = np.load(self.bert_embedding_path + "/modifier_embedding.npy", allow_pickle=True)
+            word2_embeddings = np.load(self.bert_embedding_path + "/head_embedding.npy", allow_pickle=True)
+            label_embeddings = np.load(self.bert_embedding_path + "/label_embedding.npy", allow_pickle=True)
+            phrase_embeddings = np.load(self.bert_embedding_path + "/phrase_embeddings.npy", allow_pickle=True)
+        else:
+            word1_embeddings = self.lookup_embedding(target_words=self.modifier_words,
+                                                     simple_phrases=self.context_sentences)
+            word2_embeddings = self.lookup_embedding(target_words=self.head_words, simple_phrases=self.context_sentences)
+            phrase_embeddings = []
+            for m, h in zip(word1_embeddings, word2_embeddings):
+                phrase_embeddings.append(np.mean((np.array(m), np.array(h)), axis=0))
+            label_embeddings = self.lookup_embedding(target_words=self.labels, simple_phrases=self._label_definitions)
+            #phrase_embeddings = self.lookup_embedding(target_words=self.phrases, simple_phrases=self.context_sentences)
+            word1_embeddings = F.normalize(word1_embeddings, p=2, dim=1)
+            word2_embeddings = F.normalize(word2_embeddings, p=2, dim=1)
+            label_embeddings = F.normalize(label_embeddings, p=2, dim=1)
+            phrase_embeddings = F.normalize(torch.from_numpy(np.array(phrase_embeddings)), p=2, dim=1)
         return [
-            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i]}
+            {"w1": word1_embeddings[i], "w2": word2_embeddings[i], "l": label_embeddings[i], "label": self.labels[i],
+             "phrase": phrase_embeddings[i]}
             for i in
             range(len(self.labels))]
 
@@ -505,6 +522,10 @@ class ContextualizedRankingDataset(Dataset):
         return self._head_words
 
     @property
+    def phrases(self):
+        return self._phrases
+
+    @property
     def context_sentences(self):
         return self._context_sentences
 
@@ -519,3 +540,11 @@ class ContextualizedRankingDataset(Dataset):
     @property
     def samples(self):
         return self._samples
+
+    @property
+    def load_bert_embeddings(self):
+        return self._load_bert_embeddings
+
+    @property
+    def bert_embedding_path(self):
+        return self._bert_embedding_path
